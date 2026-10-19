@@ -93,6 +93,9 @@ profile_N.pref.adapter.init.mode.receive_address_value.mode_3="618"
 
 ## 1. Ten indicators for a 520d MHEV
 
+> Superseded for the app by `doc/specs/classic-dashboard.md` (2026-10-19): the user dropped DPF soot
+> and added intake air temp and oil level. The table below is kept as the original research.
+
 Bands are rough starting points to tune against your own car, not BMW specs.
 
 | # | Indicator | Why it matters on this car | Source | Suggested colour bands |

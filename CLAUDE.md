@@ -134,6 +134,15 @@ upstream does not know about the BMW changes.
 
 Gradle needs JDK 17+ (Crashlytics plugin); the shell default may be JDK 11 and fails at configuration. Use e.g. `JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./gradlew ...`. Quick compile check for a module: `./gradlew :screen_renderer:compileDebugKotlin`.
 
+Emulator on the dev Mac (arm64): AVD `oldschool_api35` (Pixel 7, `android-35;google_apis_playstore`) plus the
+DHU in `extras/google/auto`. `avdmanager` needs `JAVA_HOME` set (JDK 17 in `~/Library/Android/jdk`). Launch with
+`adb shell am start -n org.obd.graphs.my.giulia.aa/org.obd.graphs.activity.MainActivity`; `monkey` silently
+did nothing. The AA screens need Android Auto from Play inside the emulator (the user signs in), then
+Developer settings → Start head unit server, `adb forward tcp:5277 tcp:5277`, `desktop-head-unit`.
+* **App dies at start with "Please set a valid API key" = the `google-services.json` placeholder.** No code calls
+  Firebase, but its auto-init provider validates the key's format (`A` + 38 chars) and crashes on `dummy`.
+  `scripts/setup-local.sh` writes a well-formed fake key and replaces the old `dummy` placeholder.
+
 CI "Unresolved reference" to a new ObdMetrics class while it builds locally = stale snapshot, not code.
 Locally `mavenLocal()` serves your own ObdMetrics install; CI restores a Gradle cache (`setup-java`
 `cache: gradle`) that trusts a cached `-SNAPSHOT` for 24 h. Hence `--refresh-dependencies` in

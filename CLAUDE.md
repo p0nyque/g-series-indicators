@@ -488,6 +488,9 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
 * Own `ClassicDrawer`, not a `GaugeDrawer` style: `GaugeDrawer` is shared by four screens.
 * Printed red / blue zones (oil, coolant, gearbox, EGT) are static styling, never alerts (user's choice). They must
   not change with the value.
+* Red / blue are the BMW M stripe colours (`#F11A22` / `#008AC9`, BMW Blog's RGB; BMW publishes no hex), user's
+  choice; recuperation uses the same blue. `ClassicRenderTest` pins them by exact pixel colour. Copy render PNGs into
+  `doc/specs/img/` only from a run on the final code: a run with stashed code leaves old colours in `build/`.
 * Tech design (files, phases, open questions Q1–Q10): `doc/specs/classic-dashboard-tech.md`. Facts it rests on:
   AA frames default to **5 fps** (`pref.aa.surface.fps`), too slow for easing, so the BMW profile sets 15. The canvas is
   hardware (`lockHardwareCanvas`) and `BlurMaskFilter` is accelerated only from API 28 (minSdk 26), so the glow must

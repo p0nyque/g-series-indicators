@@ -98,6 +98,13 @@ class ClassicRenderTest {
     }
 
     @Test
+    fun `printed zones use the BMW M stripe colours`() {
+        val bitmap = render(800, 480, running = false)
+        assertTrue("no M red zone drawn", pixels(bitmap, Color.parseColor("#F11A22")) > 50)
+        assertTrue("no M blue zone drawn", pixels(bitmap, Color.parseColor("#008AC9")) > 10)
+    }
+
+    @Test
     fun `missing PIDs leave their slots at rest without crashing`() {
         val bitmap = render(800, 480, running = true, values = emptyMap())
         save(bitmap, "classic-800x480-no-data.png")
@@ -129,6 +136,19 @@ class ClassicRenderTest {
             for (x in 0 until bitmap.width step 2) {
                 val c = bitmap.getPixel(x, y)
                 if (Color.red(c) > 200 && Color.green(c) in 60..140 && Color.blue(c) < 60) count++
+            }
+        }
+        return count
+    }
+
+    private fun pixels(
+        bitmap: Bitmap,
+        color: Int
+    ): Int {
+        var count = 0
+        for (y in 0 until bitmap.height) {
+            for (x in 0 until bitmap.width) {
+                if (bitmap.getPixel(x, y) == color) count++
             }
         }
         return count

@@ -47,8 +47,8 @@ internal object ClassicColors {
     val ORANGE = Color.parseColor("#FF6A13")
     val GLOW = Color.parseColor("#FF5A00")
     const val GLOW_ALPHA = 107 // 42 %
-    val RED = Color.parseColor("#A8212B")
-    val BLUE = Color.parseColor("#2F7FD8")
+    val RED = Color.parseColor("#F11A22")
+    val BLUE = Color.parseColor("#008AC9")
     val ASSIST = Color.parseColor("#E2E2E2")
     val AMBER = Color.parseColor("#FFB000")
     val SEPARATOR = Color.parseColor("#2A2A2A")

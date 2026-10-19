@@ -3,7 +3,7 @@
 2026-10-19 · Status: phase 1 implemented (screen on mock data); candidate DIDs from BMW's ECU descriptions in the PID file, not yet seen on the car.
 Phases: [tech design §5](classic-dashboard-tech.md#5-phases).
 Restyled 2026-10-19. The round-dial layout stays. Colours and styling follow the G31 LCI's Live Cockpit cluster
-(user's reference photo).
+(user's reference photo). Red and blue are the BMW M stripe colours (user's choice, 2026-10-19).
 
 ![Classic dashboard, 800 × 480](img/classic-dashboard.svg)
 
@@ -20,7 +20,7 @@ own cluster look, a centre-zero dial, a level dial or a telltale lamp.
 
 **Scope.** One new Android Auto screen, *Classic*. It shows a fixed set of 11 indicators on a single page, as round
 dials. Colours and styling come from the G31 LCI's Live Cockpit Professional cluster: graphite faces, thin light
-edges, an orange glow and progress line up to the value, an orange pointer bar, dark red segmented printed zones and
+edges, an orange glow and progress line up to the value, an orange pointer bar, BMW M red / blue segmented printed zones and
 light numerals. A BMW B47 MHEV vehicle profile and PID file supply the data. No alerts in this version (user's
 choice): nothing changes colour or flashes when a value is high. The DPF regeneration lamp is the only exception. It
 shows a state, it is not a warning.
@@ -86,8 +86,9 @@ Three bands across the renderer's visible area, top to bottom:
 - Face: graphite radial gradient, like the cluster's scale fills: dark in the centre (`#0C0C0C`, `#141414` at 62 %),
   light at the rim (`#3A3A3A`). No bezel ring.
 - Edge: a thin light line `#D9D9D9` (1.6) just outside the ticks. It runs along the sweep only, not round the circle.
-- Printed zones replace the edge line with a segmented band (5.5 wide, segments 9 on / 1.6 off): dark red `#A8212B`
-  for hot, blue `#2F7FD8` for cold (coolant only). Static styling by the user's choice (2026-10-19). They never change
+- Printed zones replace the edge line with a segmented band (5.5 wide, segments 9 on / 1.6 off): BMW M red `#F11A22`
+  for hot, BMW M blue `#008AC9` for cold (coolant only). Values: the M stripes' RGB as BMW Blog lists them; BMW
+  publishes no hex codes. The stripes' violet `#2B115A` is unused: it does not read on the graphite faces. Static styling by the user's choice (2026-10-19). They never change
   with the value.
 - Ticks: major 12 long / 2.2 wide and half-step 8, both `#D6D6D6`; minor 4.5 / 1.2 in `#8A8A8A`. Numerals sit inside
   the ticks in Roboto light, `#D6D6D6`.
@@ -109,7 +110,7 @@ Three bands across the renderer's visible area, top to bottom:
 - Label above the arc. Three numerals inside the arc (min, middle, max), or `MIN` / `MAX` for oil level. Readout and
   unit under the arc (readout 19, regular, white; unit grey). Oil level has no readout, like a fuel gauge.
 - Starter-generator is centre-zero: the progress line starts at 0. Assist (positive) is light grey `#E2E2E2`.
-  Recuperation (negative) is blue `#2F7FD8`, the cluster's charging colour. The readout always carries a sign.
+  Recuperation (negative) is BMW M blue `#008AC9`. The readout always carries a sign.
 
 ### Status strip (T1)
 
@@ -137,8 +138,8 @@ Three bands across the renderer's visible area, top to bottom:
 | `graphite` | `#0C0C0C` → `#3A3A3A` | dial faces; sub-dial bands `#3A3A3A` → `#1A1A1A` |
 | `orange` | `#FF6A13` | pointers, progress lines |
 | `glow` | `#FF5A00` at 42 % | value glow on the main dials |
-| `red` | `#A8212B` | printed hot zones |
-| `blue` | `#2F7FD8` | printed cold zone, recuperation |
+| `red` | `#F11A22` (BMW M red) | printed hot zones |
+| `blue` | `#008AC9` (BMW M blue) | printed cold zone, recuperation |
 | `assist` | `#E2E2E2` | starter-generator assist |
 | `amber` | `#FFB000` | lit regen lamp |
 

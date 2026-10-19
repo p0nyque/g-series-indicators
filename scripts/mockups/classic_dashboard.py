@@ -14,7 +14,7 @@ ts = min(W / 800, H / 480)  # strip text scale
 MIN_PX = 11.0
 
 INK, NUM, DIM, MINOR, TRACK = "#FFFFFF", "#D6D6D6", "#8E8E8E", "#8A8A8A", "#2B2B2B"
-ORANGE, GLOW, RED, BLUE, AMBER, EDGE, ASSIST = "#FF6A13", "#FF5A00", "#A8212B", "#2F7FD8", "#FFB000", "#D9D9D9", "#E2E2E2"
+ORANGE, GLOW, RED, BLUE, AMBER, EDGE, ASSIST = "#FF6A13", "#FF5A00", "#F11A22", "#008AC9", "#FFB000", "#D9D9D9", "#E2E2E2"
 FONT = "font-family='Roboto, Helvetica Neue, Arial, sans-serif'"
 out = []
 uid = [0]

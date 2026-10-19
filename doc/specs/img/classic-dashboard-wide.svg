@@ -12,7 +12,7 @@
 <path d='M117.4,272.4 A141.6,141.6 0 0 1 228.1,60.5' fill='none' stroke='#FF5A00' stroke-width='59.0' stroke-opacity='0.42' filter='url(#soft)' clip-path='url(#c1)'/>
 <path d='M119.1,271.4 A139.7,139.7 0 0 1 228.3,62.4' fill='none' stroke='#FF6A13' stroke-width='4.3' />
 <path d='M83.3,292.1 A181.0,181.0 0 1 1 412.1,145.7' fill='none' stroke='#D9D9D9' stroke-width='3.1' />
-<path d='M414.0,145.1 A182.9,182.9 0 0 1 398.4,293.1' fill='none' stroke='#A8212B' stroke-width='10.8' stroke-dasharray='17.7 3.1'/>
+<path d='M414.0,145.1 A182.9,182.9 0 0 1 398.4,293.1' fill='none' stroke='#F11A22' stroke-width='10.8' stroke-dasharray='17.7 3.1'/>
 <line x1='93.5' y1='286.2' x2='113.9' y2='274.4' stroke='#D6D6D6' stroke-width='4.3' />
 <line x1='79.1' y1='253.9' x2='87.5' y2='251.1' stroke='#8A8A8A' stroke-width='2.4' />
 <line x1='71.8' y1='219.3' x2='87.4' y2='217.6' stroke='#D6D6D6' stroke-width='2.4' />
@@ -48,9 +48,9 @@
 <circle cx='720.0' cy='201.6' r='177.0' fill='url(#face)'/>
 <path d='M597.4,272.4 A141.6,141.6 0 0 1 759.0,65.5' fill='none' stroke='#FF5A00' stroke-width='59.0' stroke-opacity='0.42' filter='url(#soft)' clip-path='url(#c2)'/>
 <path d='M599.1,271.4 A139.7,139.7 0 0 1 758.5,67.4' fill='none' stroke='#FF6A13' stroke-width='4.3' />
-<path d='M561.6,293.1 A182.9,182.9 0 0 1 552.0,129.1' fill='none' stroke='#2F7FD8' stroke-width='10.8' stroke-dasharray='17.7 3.1'/>
+<path d='M561.6,293.1 A182.9,182.9 0 0 1 552.0,129.1' fill='none' stroke='#008AC9' stroke-width='10.8' stroke-dasharray='17.7 3.1'/>
 <path d='M553.8,129.9 A181.0,181.0 0 0 1 898.2,170.2' fill='none' stroke='#D9D9D9' stroke-width='3.1' />
-<path d='M900.1,169.8 A182.9,182.9 0 0 1 878.4,293.1' fill='none' stroke='#A8212B' stroke-width='10.8' stroke-dasharray='17.7 3.1'/>
+<path d='M900.1,169.8 A182.9,182.9 0 0 1 878.4,293.1' fill='none' stroke='#F11A22' stroke-width='10.8' stroke-dasharray='17.7 3.1'/>
 <line x1='573.5' y1='286.2' x2='593.9' y2='274.4' stroke='#D6D6D6' stroke-width='4.3' />
 <line x1='557.9' y1='250.1' x2='566.4' y2='247.6' stroke='#8A8A8A' stroke-width='2.4' />
 <line x1='551.1' y1='211.4' x2='560.0' y2='210.9' stroke='#8A8A8A' stroke-width='2.4' />
@@ -120,7 +120,7 @@
 <path d='M1557.4,272.4 A141.6,141.6 0 0 1 1611.8,77.5' fill='none' stroke='#FF5A00' stroke-width='59.0' stroke-opacity='0.42' filter='url(#soft)' clip-path='url(#c4)'/>
 <path d='M1559.1,271.4 A139.7,139.7 0 0 1 1612.7,79.2' fill='none' stroke='#FF6A13' stroke-width='4.3' />
 <path d='M1523.3,292.1 A181.0,181.0 0 1 1 1852.1,145.7' fill='none' stroke='#D9D9D9' stroke-width='3.1' />
-<path d='M1854.0,145.1 A182.9,182.9 0 0 1 1838.4,293.1' fill='none' stroke='#A8212B' stroke-width='10.8' stroke-dasharray='17.7 3.1'/>
+<path d='M1854.0,145.1 A182.9,182.9 0 0 1 1838.4,293.1' fill='none' stroke='#F11A22' stroke-width='10.8' stroke-dasharray='17.7 3.1'/>
 <line x1='1533.5' y1='286.2' x2='1553.9' y2='274.4' stroke='#D6D6D6' stroke-width='4.3' />
 <line x1='1519.1' y1='253.9' x2='1527.5' y2='251.1' stroke='#8A8A8A' stroke-width='2.4' />
 <line x1='1511.8' y1='219.3' x2='1527.4' y2='217.6' stroke='#D6D6D6' stroke-width='2.4' />
@@ -173,7 +173,7 @@
 <text x='480.0' y='421.3' fill='#8E8E8E' font-size='14.4' font-weight='400' letter-spacing='1.8' text-anchor='middle' font-family='Roboto, Helvetica Neue, Arial, sans-serif'>EGT</text>
 <path d='M419.1,477.9 A86.2,86.2 0 0 1 540.9,477.9' fill='none' stroke='url(#band)' stroke-width='21.2'/>
 <path d='M408.9,467.7 A100.5,100.5 0 0 1 530.3,451.8' fill='none' stroke='#D9D9D9' stroke-width='2.4' />
-<path d='M531.0,450.5 A102.1,102.1 0 0 1 552.2,466.7' fill='none' stroke='#A8212B' stroke-width='8.3' stroke-dasharray='13.6 2.4'/>
+<path d='M531.0,450.5 A102.1,102.1 0 0 1 552.2,466.7' fill='none' stroke='#F11A22' stroke-width='8.3' stroke-dasharray='13.6 2.4'/>
 <line x1='412.6' y1='471.5' x2='423.3' y2='482.2' stroke='#D6D6D6' stroke-width='3.0' />
 <line x1='427.1' y1='459.6' x2='431.3' y2='465.9' stroke='#8A8A8A' stroke-width='1.7' />
 <line x1='443.5' y1='450.8' x2='446.4' y2='457.8' stroke='#8A8A8A' stroke-width='1.7' />

@@ -246,7 +246,7 @@ Plain JUnit unless noted. Write the pure ones first; they pin the spec's numbers
 | `ScreenBehaviorControllerTest` | `:screen_behavior` (extend) | `CLASSIC` allocates a `ClassicScreenBehavior` with `CLASSIC_QUERY`. |
 | `SetupProfilesTest` | `:profile` (extend) | Loads the **shipped** asset (`../automotive/src/main/assets`): four header entries; `7E0` / `6F1` and the quoted extended addresses stay strings; registry list, STN off, 15 fps. |
 | `ClassicPidsTest` | `:datalogger` | ObdMetrics parses `bmw_b47_mhev.json` from the class loader; it defines exactly the Classic BMW ids; EGS / BAT48 `canMode`; no mode-22 batching; fast PIDs priority 0. |
-| `ClassicRenderTest` | `:screen_renderer` (Robolectric, native graphics, SDK 34) | Draws the screen on a real canvas at 800 × 480 and 1920 × 720, regen, no data and disconnected; PNGs in `screen_renderer/build/classic-render/`. Asserts a black background, orange pointers / glow present, and the glow gone when disconnected. |
+| `ClassicRenderTest` | `:screen_renderer` (Robolectric, native graphics, SDK 34) | Draws the screen on a real canvas at 800 × 480 and 1920 × 720, regen, no data and disconnected; PNGs in `screen_renderer/build/classic-render/`. Asserts a black background, orange pointers / glow present, the glow gone when disconnected, and the printed zones in the exact BMW M red / blue. |
 | ObdMetrics `BmwB47MhevPidsTest` | ObdMetrics (phase 2) | Each PID decodes a captured reply (from the phase 0 logs) to the expected value; the signed formula gives a negative kW. |
 
 `ClassicRenderTest` is the Canvas check while no DHU is available; it does not replace a DHU / car look at frame rate and blur.

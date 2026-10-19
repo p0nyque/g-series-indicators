@@ -1,4 +1,4 @@
-# Oldschool Indicators — research notes
+# G-Series Indicators — research notes
 
 Car: BMW G31 LCI 520d MHEV (B47 diesel, 48 V belt starter-generator, ZF 8HP)
 Goal: replace BimmerLink's dashboard/widget with a custom-designed gauge display.

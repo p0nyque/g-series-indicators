@@ -108,7 +108,7 @@ the argument's own indent level instead of being indented one step further.
 
 This checkout is the user's private fork, not upstream ObdGraphs. The rules below replace upstream's.
 
-**Repos and remotes.** App: `origin` = `p0nyque/oldschool-indicators` (private), `upstream` =
+**Repos and remotes.** App: `origin` = `p0nyque/g-series-indicators` (private; was `oldschool-indicators`), `upstream` =
 `tzebrowski/ObdGraphs`. Library: `../ObdMetrics`, `origin` = `p0nyque/ObdMetrics` (private, default branch
 `feat/bmw-extended-addressing`), `upstream` = `tzebrowski/ObdMetrics`. The app builds against that branch
 installed into `~/.m2`. GitHub Actions are off on both repos: upstream's workflows need secrets and the

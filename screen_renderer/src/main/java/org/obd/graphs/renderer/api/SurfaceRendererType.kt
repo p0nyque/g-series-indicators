@@ -23,7 +23,8 @@ enum class SurfaceRendererType(
     GAUGE(4),
     DRAG_RACING(1),
     TRIP_INFO(3),
-    PERFORMANCE(5)
+    PERFORMANCE(5),
+    CLASSIC(6)
     ;
 
     override fun id(): Int = this.code

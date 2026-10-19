@@ -79,8 +79,10 @@ internal abstract class TestSetup {
         setPreferencesContext(context)
     }
 
-    protected fun mockPropertiesFiles(assetFilenames: List<String> = listOf("alfa_2_0_gme.properties")) {
-        val basePath = "src/test/assets"
+    protected fun mockPropertiesFiles(
+        assetFilenames: List<String> = listOf("alfa_2_0_gme.properties"),
+        basePath: String = "src/test/assets"
+    ) {
         every { assets.list("") } returns assetFilenames.toTypedArray()
         val combinedProps = Properties()
 

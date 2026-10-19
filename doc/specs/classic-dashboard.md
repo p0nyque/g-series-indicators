@@ -1,6 +1,7 @@
 # Spec: Classic dashboard (BMW G31 520d MHEV, Android Auto)
 
-2026-10-19 · Status: proposed, not implemented. BMW DIDs not yet discovered (marked **TBD**).
+2026-10-19 · Status: phase 1 implemented (screen on mock data, placeholder DIDs); BMW DIDs not yet discovered
+(marked **TBD**). Phases: [tech design §5](classic-dashboard-tech.md#5-phases).
 Restyled 2026-10-19. The round-dial layout stays. Colours and styling follow the G31 LCI's Live Cockpit cluster
 (user's reference photo).
 
@@ -9,6 +10,7 @@ Restyled 2026-10-19. The round-dial layout stays. Colours and styling follow the
 Car screen size, 1920 × 720: [img/classic-dashboard-wide.svg](img/classic-dashboard-wide.svg).
 Regeneration running: [img/classic-dashboard-regen.svg](img/classic-dashboard-regen.svg).
 The mockups come from `scripts/mockups/classic_dashboard.py`. Change the spec first, then the script.
+Tech design (files, phases, open questions): [classic-dashboard-tech.md](classic-dashboard-tech.md).
 
 ## Summary
 
@@ -152,39 +154,22 @@ Roboto's light weight comes closest and ships on every device. The background st
 
   | Entry | `id_value` | Header | Extended address | Receive | Description |
   |---|---|---|---|---|---|
-  | `mode_1` | `"01"` | `7DF` | — | — | OBD-II |
+  | `mode_1` | `"01"` | `7E0` (proposed; `7DF` may draw two replies, tech design Q5) | — | — | OBD-II |
   | `mode_2` | `"22"` | `6F1` | `"12"` | `"612"` | DDE |
   | `mode_3` | `"EGS"` | `6F1` | `"18"` | `"618"` | EGS |
   | `mode_4` | `"BAT48"` | `6F1` | TBD | TBD | 48 V battery / DC-DC |
 
   `pref.pids.registry.list=[mode01.json, mode01_2.json, bmw_b47_mhev.json]`.
-- New PID file `bmw_b47_mhev.json` in ObdMetrics resources (fork, next to `giulia_2.0_gme.json`). Ids `40001`–`40099`
+- New PID file `bmw_b47_mhev.json` in `datalogger/src/main/resources/` (found by the class loader like ObdMetrics' own files; no jar rebuild per DID). Ids `40001`–`40099`
   (free: the highest id in use is 36000). EGS and 48 V PIDs carry `"overrides": {"canMode": "EGS"}` / `"BAT48"`.
 
 ## Implementation
 
-- `screen_renderer/.../renderer/classic/`:
-  - `ClassicSurfaceRenderer` orchestrates a frame. `ClassicDrawer` (extends `AbstractDrawer`) does the Canvas work.
-    It is a separate drawer, not a `GaugeDrawer` style: `GaugeDrawer` is shared by four screens and maps through
-    `GaugeScale`, while these scales are fixed by design.
-  - `ClassicDials.kt`: slot table (PID id, kind `MAIN` / `SUB` / `CENTRE_ZERO` / `LEVEL` / `LAMP`, range, numerals,
-    printed zones, decimals, unit). Pure, no Canvas.
-  - `ClassicLayout.kt`: band and cell rectangles from the visible area, dial radii, value → angle with clamping and
-    rest position. Pure and unit-tested, like `GaugeGeometry`.
-  - The static parts (faces, bands, edges, ticks, numerals, printed zones, labels) go into one bitmap per area size,
-    keyed by area size and the slot table. Each frame draws only the glow, progress lines, pointers, readouts and the
-    strip.
-  - Glow: an orange arc stroke with a `BlurMaskFilter`, clipped to the face. Blur is slow on some head units. If the
-    frame rate drops, render each dial's full-sweep glow into a bitmap once. Then clip it to the value's angle each
-    frame.
-- `datalogger/.../query/ClassicQueryStrategy.kt`: fixed id set (the 12 drawn PIDs + baro). Fast PIDs (boost actual
-  and target, starter-generator) get priority 0. Temperatures, SOC and voltage get 1. Oil level, regen status and
-  distance get 2.
-  Exclude `VEHICLE_STATUS` from drawing if `QueryStrategyOrchestrator` injects it, as on Trip Info.
-- AA: register `CLASSIC` in `SurfaceRendererScreen`'s renderer map and screen switcher. Add a `ClassicScreenBehavior`
-  in `:screen_behavior`.
-- Units through `displayUnits()`. Labels are fixed English strings in EN and PL `strings.xml` (`OIL`, `COOLANT`, …),
-  since cluster labels are not translated on the real car either. Keep them as resources anyway.
+Files, data flow, decisions, phases and open questions: [classic-dashboard-tech.md](classic-dashboard-tech.md).
+In short: `ClassicSurfaceRenderer` + standalone `ClassicDrawer` (not an `AbstractDrawer`: it would inherit the theme
+and Giulia-scoped settings) in `renderer/classic/`, pure `ClassicDials` / `ClassicReadings` / `ClassicLayout`, a
+static-layer bitmap per area size, `ClassicQueryStrategy` (`CLASSIC_QUERY`) over ids kept in `ClassicPids`
+(`:datalogger`), and `CLASSIC(6)` wired into the AA screen list.
 
 ### DID discovery (blocks M1, M3, M4, S2–S5, T1)
 
@@ -200,14 +185,7 @@ Additive only: a new screen type, profile and PID file. Existing screens, profil
 
 ## Tests
 
-- `ClassicLayoutTest` (`:screen_renderer`, plain JUnit): bands at 800 × 480 and 1920 × 720. No dial outside the area,
-  no two cells overlapping, dials keep their aspect on wide screens. Value → angle: min, max, clamping beyond both ends,
-  centre-zero 0 at the top, rest position for `null`.
-- `ClassicDialsTest`: every slot's numerals lie on its scale and its printed zones lie inside the range. Readout formatting
-  (decimals, sign for the starter-generator, `--` for null). Regen text for active / distance / no value.
-- `ClassicQueryStrategyTest` (`:datalogger`): queried ids = indicator ids + baro.
-- Profile load test in `:profile` (`SetupProfilesTest` style): the four header table entries, the extended addresses
-  quoted.
+See [classic-dashboard-tech.md §7](classic-dashboard-tech.md#7-tests).
 
 ## Risks and verification checklist
 

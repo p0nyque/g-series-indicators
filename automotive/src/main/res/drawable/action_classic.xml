@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Round dial with a 240 degree scale and a pointer, for the Classic dashboard. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="54dp"
+    android:height="54dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Scale from 7 to 5 o'clock, radius 9 around (12, 13). -->
+    <path
+        android:pathData="M4.21,17.5 A9,9 0 1,1 19.79,17.5"
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round" />
+    <!-- Pointer at about two thirds of the scale. -->
+    <path
+        android:pathData="M18.36,6.64 L14.12,10.88"
+        android:strokeWidth="2.2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round" />
+</vector>

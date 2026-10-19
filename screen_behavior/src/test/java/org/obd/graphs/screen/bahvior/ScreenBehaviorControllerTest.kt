@@ -20,6 +20,7 @@ import io.mockk.*
 import org.junit.Before
 import org.junit.Test
 import org.obd.graphs.bl.collector.MetricsCollector
+import org.obd.graphs.bl.query.QueryStrategyType
 import org.obd.graphs.renderer.api.*
 import org.obd.graphs.screen.behaviour.ScreenBehaviorController
 import kotlin.test.assertEquals
@@ -35,7 +36,8 @@ internal class ScreenBehaviorControllerTest: TestSetup() {
     // Mock the specific settings required by the behaviors
     private val settingsMap: Map<SurfaceRendererType, ScreenSettings> = mapOf(
         SurfaceRendererType.GIULIA to mockk(relaxed = true),
-        SurfaceRendererType.DRAG_RACING to mockk(relaxed = true)
+        SurfaceRendererType.DRAG_RACING to mockk(relaxed = true),
+        SurfaceRendererType.CLASSIC to mockk(relaxed = true)
     )
 
     private lateinit var controller: ScreenBehaviorController
@@ -91,5 +93,22 @@ internal class ScreenBehaviorControllerTest: TestSetup() {
         verify(exactly = 0) {
             SurfaceRenderer.allocate(any(), any(), any(), any(), eq(SurfaceRendererType.DRAG_RACING))
         }
+    }
+
+    @Test
+    fun `classic screen allocates the classic renderer and its fixed query`() {
+        val behavior = controller.getScreenBehavior(SurfaceRendererType.CLASSIC)
+        assertNotNull(behavior)
+
+        verify(exactly = 1) {
+            SurfaceRenderer.allocate(any(), any(), any(), any(), eq(SurfaceRendererType.CLASSIC))
+        }
+        assertEquals(QueryStrategyType.CLASSIC_QUERY, behavior.query().getStrategy())
+    }
+
+    @Test
+    fun `classic keeps code 6, persisted as the last visited AA screen`() {
+        assertEquals(6, SurfaceRendererType.CLASSIC.id())
+        assertEquals(SurfaceRendererType.CLASSIC, SurfaceRendererType.fromInt(6))
     }
 }

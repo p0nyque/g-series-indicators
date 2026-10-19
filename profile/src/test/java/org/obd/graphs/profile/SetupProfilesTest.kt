@@ -376,6 +376,32 @@ internal class SetupProfilesTest : TestSetup() {
         verify { editor.updatePreference("pref.about.build_version", "86") }
     }
 
+    @Test
+    fun `BMW G31 profile keeps its header table and quoted extended addresses`() {
+        // The shipped AA asset, not a test copy.
+        mockInstallationKey(false)
+        mockPropertiesFiles(listOf("bmw_g31_520d_mhev.properties"), basePath = "../automotive/src/main/assets")
+
+        profileService.init(86, "profile_21", "20251218.1055")
+        profileService.setupProfiles(forceOverrideRecommendation = true)
+
+        val mode = "profile_21.pref.adapter.init.mode"
+        verify { editor.updatePreference("$mode.header_value.mode_1", "7E0") }
+        verify { editor.updatePreference("$mode.id_value.mode_1", "01") }
+        verify { editor.updatePreference("$mode.header_value.mode_2", "6F1") }
+        verify { editor.updatePreference("$mode.id_value.mode_2", "22") }
+        verify { editor.updatePreference("$mode.extended_address_value.mode_2", "12") }
+        verify { editor.updatePreference("$mode.receive_address_value.mode_2", "612") }
+        verify { editor.updatePreference("$mode.id_value.mode_3", "EGS") }
+        verify { editor.updatePreference("$mode.extended_address_value.mode_3", "18") }
+        verify { editor.updatePreference("$mode.receive_address_value.mode_3", "618") }
+        verify { editor.updatePreference("$mode.id_value.mode_4", "BAT48") }
+        verify { editor.updatePreference("profile_21.pref.pids.registry.list", setOf("mode01.json", "mode01_2.json", "bmw_b47_mhev.json")) }
+        verify { editor.updatePreference("profile_21.pref.adapter.stn.enabled", false) }
+        verify { editor.updatePreference("profile_21.pref.adapter.init.protocol", "CAN_11") }
+        verify { editor.updatePreference("profile_21.pref.aa.surface.fps", "15") }
+    }
+
     private fun mockInstallationKey(keyPresent: Boolean = false) =
         every { Prefs.getBoolean("prefs.installed.profiles.1", false) } returns keyPresent
 }

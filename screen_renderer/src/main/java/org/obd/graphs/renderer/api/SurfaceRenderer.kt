@@ -20,6 +20,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Rect
 import org.obd.graphs.bl.collector.MetricsCollector
+import org.obd.graphs.renderer.classic.ClassicSurfaceRenderer
 import org.obd.graphs.renderer.drag.DragRacingSurfaceRenderer
 import org.obd.graphs.renderer.gauge.GaugeSurfaceRenderer
 import org.obd.graphs.renderer.giulia.GiuliaSurfaceRenderer
@@ -88,6 +89,7 @@ interface SurfaceRenderer {
                 SurfaceRendererType.DRAG_RACING -> DragRacingSurfaceRenderer(context, settings, metricsCollector, fps)
                 SurfaceRendererType.TRIP_INFO -> TripInfoSurfaceRenderer(context, settings, metricsCollector, fps)
                 SurfaceRendererType.PERFORMANCE -> PerformanceSurfaceRenderer(context, settings, metricsCollector, fps)
+                SurfaceRendererType.CLASSIC -> ClassicSurfaceRenderer(context, settings, metricsCollector, fps)
             }
     }
 }

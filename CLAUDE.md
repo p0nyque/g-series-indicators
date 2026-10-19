@@ -62,7 +62,9 @@ When writing new tests, use the natively provided libraries within the `androidT
 > `PidDefinitionDialogModeTest`, `./gradlew :app:testGiuliaDebugUnitTest`). `:datalogger` does have a local JVM suite under `src/test` running on
 > Robolectric (`./gradlew :datalogger:testDebugUnitTest`). `:screen_renderer` has plain JUnit
 > tests for pure layout logic (`./gradlew :screen_renderer:testDebugUnitTest`) — keep Canvas-free
-> logic in testable functions such as `TripInfoMetrics`. Other modules define only
+> logic in testable functions such as `TripInfoMetrics` — plus `ClassicRenderTest`, which draws a
+> whole screen on a real canvas (Robolectric `@GraphicsMode(NATIVE)`, `@Config(sdk = [34])`) into
+> PNGs under `screen_renderer/build/classic-render/`: the way to look at a screen without a DHU. Other modules define only
 > `androidTestImplementation`, so a new local suite there needs `testImplementation` added first.
 
 **Every new feature ships with a spec** in `doc/specs/<feature>.md`, staged with the change — not
@@ -461,7 +463,7 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
   for `RoutinesScreen`) gets the parent's pause when it is pushed, so its receiver should unregister while
   it is on screen (read from the code, not yet confirmed on a DHU). `DiagnosticTroubleCodesScreen` observes its own lifecycle instead.
 
-### Classic dashboard (AA, proposed)
+### Classic dashboard (AA; phase 1 on mock data)
 * Spec `doc/specs/classic-dashboard.md`. 11 fixed indicators on one AA page: 4 main round dials, 6 sub-dials and a
   status strip. They are styled in the G31 LCI's Live Cockpit colours: graphite faces, orange glow and progress line
   up to the value, an orange pointer bar with no pivot. User's choices: one page, no alerts of any kind for now, fixed
@@ -475,6 +477,32 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
 * Own `ClassicDrawer`, not a `GaugeDrawer` style: `GaugeDrawer` is shared by four screens.
 * Printed red / blue zones (oil, coolant, gearbox, EGT) are static styling, never alerts (user's choice). They must
   not change with the value.
+* Tech design (files, phases, open questions Q1–Q10): `doc/specs/classic-dashboard-tech.md`. Facts it rests on:
+  AA frames default to **5 fps** (`pref.aa.surface.fps`), too slow for easing, so the BMW profile sets 15. The canvas is
+  hardware (`lockHardwareCanvas`) and `BlurMaskFilter` is accelerated only from API 28 (minSdk 26), so the glow must
+  look acceptable without blur. Only `Roboto-Regular` / `Roboto-LightItalic` are bundled; add `Roboto-Light.ttf` and
+  never use system `sans-serif-light`, which Samsung's font setting replaces.
+* Draw Classic by slot id (`getMetric(id)`), never by iterating `getMetrics()`: injected `VEHICLE_STATUS` then cannot
+  show, and a PID missing from the registry leaves its slot at rest instead of shifting the others.
+* ObdMetrics priorities apply only with `pref.adapter.batch.enabled`; header switches are not grouped per ECU, and each
+  entry into an extended entry costs 6 AT commands. Refresh-rate levers are listed in the tech design §6.
+* The debug `mock` connection answers every PID in the registry: a PID file with placeholder DIDs lets the whole screen
+  run on the DHU before any real DID is known. `01 78` (EGT) is not defined in ObdMetrics' `mode01.json`.
+* Code: `renderer/classic/` (pure `ClassicDials` / `ClassicReadings` / `ClassicLayout`, `ClassicDrawer`,
+  `ClassicStaticLayer`, `ClassicSurfaceRenderer`), ids in `:datalogger` `ClassicPids` (one copy; `ClassicDialsTest`
+  fails if a drawn id is not queried), `CLASSIC_QUERY`, `SurfaceRendererType.CLASSIC(6)` (persisted, never renumber),
+  profile `profile_21` (`automotive/src/main/assets/bmw_g31_520d_mhev.properties`).
+* **`bmw_b47_mhev.json` lives in `datalogger/src/main/resources/`, not ObdMetrics.** ObdMetrics finds PID files with the
+  context class loader, and any module's Java resources land at the APK root next to `mode01.json`; no jar rebuild per
+  DID. Its DIDs `FD01`–`FD30` and scalings are **placeholders** (JSON has no comments) until found on the car.
+* The glow must sit *between* two static bitmaps (faces below, ticks / numerals above): over one flat bitmap it tinted
+  the ticks and numerals orange. Draw order is the mockup script's.
+* Staleness: only boost and the starter-generator are fast (10 s). `mode01.json` reads coolant and IAT at priority 2
+  (every 16th cycle), which a 10 s limit greys out, so every other slot uses 60 s.
+* `Roboto-Light.ttf` is not bundled yet (download pending); `ClassicDrawer` falls back to `sans-serif-light`.
+* `Fps` is a class, not an interface: a `Proxy` stub cannot stand in for it in tests.
+* Profile loader: only `-?\d+` values become `Int`, so headers like `7E0` / `6F1` stay strings unquoted; ECU addresses
+  such as `12` / `612` still need quotes.
 
 ### CAN extended addressing (BMW F/G)
 * Spec `doc/specs/bmw-extended-addressing.md`. A header table entry may carry `extended_address_value` /

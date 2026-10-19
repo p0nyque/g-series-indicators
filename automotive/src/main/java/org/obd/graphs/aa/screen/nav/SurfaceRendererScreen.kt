@@ -98,7 +98,8 @@ internal class SurfaceRendererScreen(
             SurfaceRendererType.GIULIA to settings,
             SurfaceRendererType.TRIP_INFO to settings,
             SurfaceRendererType.DRAG_RACING to settings,
-            SurfaceRendererType.PERFORMANCE to settings
+            SurfaceRendererType.PERFORMANCE to settings,
+            SurfaceRendererType.CLASSIC to settings
         ),
         fps
     )
@@ -241,6 +242,11 @@ internal class SurfaceRendererScreen(
                 SurfaceRendererType.GIULIA,
                 R.drawable.action_giulia_metics,
                 stringProvider.getString(R.string.available_features_giulia_screen_title)
+            ),
+            FeatureDescription(
+                SurfaceRendererType.CLASSIC,
+                R.drawable.action_classic,
+                stringProvider.getString(R.string.available_features_classic_screen_title)
             )
         ).apply {
             if (settings.getTripInfoScreenSettings().viewEnabled) {

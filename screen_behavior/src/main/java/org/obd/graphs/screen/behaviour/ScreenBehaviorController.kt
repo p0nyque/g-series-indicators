@@ -61,6 +61,9 @@ class ScreenBehaviorController(
 
                 SurfaceRendererType.TRIP_INFO ->
                     TripInfoScreenBehavior(context, metricsCollector, settings, fps)
+
+                SurfaceRendererType.CLASSIC ->
+                    ClassicScreenBehavior(context, metricsCollector, settings, fps)
             }
         }
     }

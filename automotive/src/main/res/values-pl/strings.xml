@@ -53,6 +53,7 @@
     <string name="available_features.giulia_screen.title">Giulia</string>
     <string name="available_features.gauge_screen.title">Wskaźniki</string>
     <string name="available_features.trip_info_screen.title">Informacje o trasie</string>
+    <string name="available_features.classic_screen.title">Klasyczny</string>
 
     <string name="aa_stat_min">min</string>
     <string name="aa_stat_avg">śr</string>

@@ -52,6 +52,7 @@
     <string name="available_features.giulia_screen.title">Giulia</string>
     <string name="available_features.gauge_screen.title">Gauge</string>
     <string name="available_features.trip_info_screen.title">Trip Info</string>
+    <string name="available_features.classic_screen.title">Classic</string>
 
     <string name="aa_stat_min">min</string>
     <string name="aa_stat_avg">avg</string>

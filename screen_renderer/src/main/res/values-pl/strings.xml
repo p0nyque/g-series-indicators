@@ -22,4 +22,19 @@
     <string name="status_bar.atm_pressure">ciśn. atmosf.: </string>
     <string name="gauge.rate">odczyty/s</string>
 
+    <!-- Classic dashboard: cluster labels, the same in every language like on the car -->
+    <string name="classic_label_oil">OIL</string>
+    <string name="classic_label_coolant">COOLANT</string>
+    <string name="classic_label_boost">BOOST</string>
+    <string name="classic_label_gearbox">GEARBOX</string>
+    <string name="classic_label_intake">INTAKE</string>
+    <string name="classic_label_egt">EGT</string>
+    <string name="classic_label_oil_level">OIL LEVEL</string>
+    <string name="classic_label_battery_48v">48V BATTERY</string>
+    <string name="classic_label_starter_generator">STARTER-GEN</string>
+    <string name="classic_label_battery_12v">12V BATTERY</string>
+    <string name="classic_target">TARGET</string>
+    <string name="classic_regen_lamp">DPF REGEN</string>
+    <string name="classic_regen_since">SINCE REGEN</string>
+    <string name="classic_regen_active">Regeneracja</string>
 </resources>

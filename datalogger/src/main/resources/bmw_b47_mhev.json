@@ -1,0 +1,163 @@
+{
+  "metadata": [],
+  "livedata": [
+    {
+      "id": "40001",
+      "mode": "22",
+      "pid": "FD01",
+      "length": 1,
+      "description": "Engine Oil\nTemp",
+      "min": 50,
+      "max": 150,
+      "units": "C",
+      "priority": 1,
+      "formula": "A-40",
+      "type": "INT",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40002",
+      "mode": "22",
+      "pid": "FD02",
+      "length": 2,
+      "description": "Boost\nActual",
+      "min": 1.0,
+      "max": 3.0,
+      "units": "bar",
+      "priority": 0,
+      "formula": "parseFloat(((A*256+B)/1000).toFixed(3))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40003",
+      "mode": "22",
+      "pid": "FD03",
+      "length": 2,
+      "description": "Boost\nTarget",
+      "min": 1.0,
+      "max": 3.0,
+      "units": "bar",
+      "priority": 0,
+      "formula": "parseFloat(((A*256+B)/1000).toFixed(3))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40004",
+      "mode": "22",
+      "pid": "FD04",
+      "length": 2,
+      "description": "Exhaust Temp\nbefore DPF",
+      "min": 0,
+      "max": 900,
+      "units": "C",
+      "priority": 1,
+      "formula": "(A*256+B)/10",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40005",
+      "mode": "22",
+      "pid": "FD05",
+      "length": 1,
+      "description": "Engine Oil\nLevel",
+      "min": 0,
+      "max": 100,
+      "units": "",
+      "priority": 2,
+      "formula": "A",
+      "type": "INT",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40006",
+      "mode": "22",
+      "pid": "FD06",
+      "length": 2,
+      "description": "Starter-Generator\nPower",
+      "min": -10,
+      "max": 10,
+      "units": "kW",
+      "priority": 0,
+      "formula": "((A*256+B) << 16 >> 16)/100",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40007",
+      "mode": "22",
+      "pid": "FD07",
+      "length": 1,
+      "description": "DPF Regeneration\nActive",
+      "min": 0,
+      "max": 1,
+      "units": "",
+      "priority": 2,
+      "formula": "A",
+      "type": "INT",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40008",
+      "mode": "22",
+      "pid": "FD08",
+      "length": 2,
+      "description": "Distance since\nDPF Regeneration",
+      "min": 0,
+      "max": 1000,
+      "units": "km",
+      "priority": 2,
+      "formula": "A*256+B",
+      "type": "INT",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40020",
+      "mode": "22",
+      "pid": "FD20",
+      "length": 1,
+      "description": "Gearbox Oil\nTemp",
+      "min": 40,
+      "max": 140,
+      "units": "C",
+      "priority": 1,
+      "formula": "A-40",
+      "type": "INT",
+      "overrides": {
+        "canMode": "EGS",
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40030",
+      "mode": "22",
+      "pid": "FD30",
+      "length": 1,
+      "description": "48V Battery\nState of Charge",
+      "min": 0,
+      "max": 100,
+      "units": "%",
+      "priority": 1,
+      "formula": "A",
+      "type": "INT",
+      "overrides": {
+        "canMode": "BAT48",
+        "batchEnabled": false
+      }
+    }
+  ]
+}

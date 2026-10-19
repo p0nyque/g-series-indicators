@@ -39,6 +39,13 @@ android {
     }
 
     namespace "org.obd.graphs.renderer"
+
+    // Robolectric render tests (ClassicRenderTest) read strings and bundled fonts.
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -64,4 +71,5 @@ dependencies {
     implementation 'pub.devrel:easypermissions:3.0.0'
 
     testImplementation "junit:junit:4.13.2"
+    testImplementation "org.robolectric:robolectric:4.11.1"
 }

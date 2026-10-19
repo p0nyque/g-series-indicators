@@ -34,6 +34,7 @@ object Modules {
     private val overrides = mapOf(
         "alfa.json" to "Giulietta QV",
         "giulia_2.0_gme.json" to "Giulia 2.0 GME",
+        "bmw_b47_mhev.json" to "BMW B47 MHEV",
         USER_CUSTOM_PIDS_FILE to "User custom PIDs"
     )
 

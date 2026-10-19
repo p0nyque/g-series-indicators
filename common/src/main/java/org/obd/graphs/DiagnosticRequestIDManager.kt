@@ -29,7 +29,11 @@ data class DiagnosticMappingItem(
     val headerValue: String,
     // Friendly label shown everywhere in the UI. requestKey remains the internal lookup ID
     // (matched against a PID's mode / used as the DTC module key) and is never itself displayed.
-    val description: String = ""
+    val description: String = "",
+    // CAN extended addressing (BMW F/G: header 6F1, extendedAddress 12 = DDE, receiveAddress 612). Empty for
+    // normal addressing. Set by the profile only, there is no UI for them.
+    val extendedAddress: String = "",
+    val receiveAddress: String = ""
 ) {
     val displayName: String
         get() = description.ifBlank { requestKey }
@@ -39,6 +43,8 @@ object DiagnosticRequestIDManager {
     private const val PREFIX_ID = "pref.adapter.init.mode.id_value.mode_"
     private const val PREFIX_HEADER = "pref.adapter.init.mode.header_value.mode_"
     private const val PREFIX_DESCRIPTION = "pref.adapter.init.mode.description_value.mode_"
+    private const val PREFIX_EXTENDED_ADDRESS = "pref.adapter.init.mode.extended_address_value.mode_"
+    private const val PREFIX_RECEIVE_ADDRESS = "pref.adapter.init.mode.receive_address_value.mode_"
 
     private const val ACTIVE_ID_KEY = "pref.adapter.init.mode.id"
     private const val ACTIVE_HEADER_KEY = "pref.adapter.init.mode.header"
@@ -58,7 +64,16 @@ object DiagnosticRequestIDManager {
                 val cleanKey = key.replace("\"", "")
                 val cleanValue = value.replace("\"", "")
                 val cleanDescription = description?.replace("\"", "") ?: ""
-                mappings.add(DiagnosticMappingItem(i, cleanKey, cleanValue, cleanDescription))
+                mappings.add(
+                    DiagnosticMappingItem(
+                        i,
+                        cleanKey,
+                        cleanValue,
+                        cleanDescription,
+                        extendedAddress = address("$PREFIX_EXTENDED_ADDRESS$i"),
+                        receiveAddress = address("$PREFIX_RECEIVE_ADDRESS$i")
+                    )
+                )
             }
         }
         return mappings
@@ -70,12 +85,22 @@ object DiagnosticRequestIDManager {
         return mapping
     }
 
+    // An unquoted numeric value in a profile (12, 612) is restored as an Int, so read it as whatever was stored.
+    private fun address(key: String): String =
+        Prefs.all[key]
+            ?.toString()
+            ?.replace("\"", "")
+            ?.trim()
+            ?.uppercase() ?: ""
+
     fun saveMapping(item: DiagnosticMappingItem) {
         val activeId = Prefs.getString(ACTIVE_ID_KEY, "")?.replace("\"", "")
 
         Prefs.updateString("$PREFIX_ID${item.modeIndex}", item.requestKey)
         Prefs.updateString("$PREFIX_HEADER${item.modeIndex}", item.headerValue)
         Prefs.updateString("$PREFIX_DESCRIPTION${item.modeIndex}", item.description)
+        Prefs.updateString("$PREFIX_EXTENDED_ADDRESS${item.modeIndex}", item.extendedAddress)
+        Prefs.updateString("$PREFIX_RECEIVE_ADDRESS${item.modeIndex}", item.receiveAddress)
 
         if (activeId == item.requestKey) {
             Prefs.updateString(ACTIVE_HEADER_KEY, item.headerValue)
@@ -95,6 +120,8 @@ object DiagnosticRequestIDManager {
             .remove("$PREFIX_ID${item.modeIndex}")
             .remove("$PREFIX_HEADER${item.modeIndex}")
             .remove("$PREFIX_DESCRIPTION${item.modeIndex}")
+            .remove("$PREFIX_EXTENDED_ADDRESS${item.modeIndex}")
+            .remove("$PREFIX_RECEIVE_ADDRESS${item.modeIndex}")
             .apply()
     }
 
@@ -104,6 +131,8 @@ object DiagnosticRequestIDManager {
                 editor.putString("$PREFIX_HEADER$i", "")
                 editor.putString("$PREFIX_ID$i", "")
                 editor.putString("$PREFIX_DESCRIPTION$i", "")
+                editor.putString("$PREFIX_EXTENDED_ADDRESS$i", "")
+                editor.putString("$PREFIX_RECEIVE_ADDRESS$i", "")
             }
             editor.putString(ACTIVE_HEADER_KEY, "")
             editor.putString(ACTIVE_ID_KEY, "")

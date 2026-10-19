@@ -46,12 +46,50 @@ Data comes from two kinds of parameters:
 - **Gap: no BMW extended addressing.** `ObdMetrics/.../api/CANMessageHeaderMultiplexer.java`
   only sends `ATSH<header>` when switching ECU. BMW needs per-ECU
   `ATSH6F1` + `ATCEA<ecu>` + `ATCRA6<ecu>` (plus flow-control setup for multi-frame
-  replies). This is a contained change in that class plus a field on `Init.Header`, and a
-  good candidate to upstream.
+  replies). Now added, see "BMW extended addressing" below.
 - **Install:** a self-built APK only shows up in Android Auto with Android Auto developer
   settings → "Unknown sources" enabled. The same is true for any sideloaded app,
   aa-torque included.
 - **Build prerequisites on this Mac:** no JDK or Android Studio installed yet.
+
+### BMW extended addressing (added 2026-10-19, not yet tried on the car)
+
+ObdMetrics change: local clone `../ObdMetrics`, branch `feat/bmw-extended-addressing`
+(uncommitted), installed into `~/.m2` as `11.26.1-SNAPSHOT`, which ObdGraphs picks up first.
+
+Profile keys: each entry of the header table (`mode_N`) takes two optional keys next to
+`id_value` / `header_value`. Quote numeric values: an unquoted `12` is restored as a number.
+
+```properties
+profile_N.pref.adapter.init.mode.id_value.mode_2="22"
+profile_N.pref.adapter.init.mode.header_value.mode_2=6F1
+profile_N.pref.adapter.init.mode.extended_address_value.mode_2="12"
+profile_N.pref.adapter.init.mode.receive_address_value.mode_2="612"
+profile_N.pref.adapter.init.mode.description_value.mode_2="DDE"
+
+profile_N.pref.adapter.init.mode.id_value.mode_3="EGS"
+profile_N.pref.adapter.init.mode.header_value.mode_3=6F1
+profile_N.pref.adapter.init.mode.extended_address_value.mode_3="18"
+profile_N.pref.adapter.init.mode.receive_address_value.mode_3="618"
+```
+
+- `extended_address_value` = the ECU address (`12` DDE, `18` EGS). Empty or missing = normal
+  addressing, as before. `receive_address_value` = the CAN id the ECU answers on (`ATCRA`);
+  optional, but set it, otherwise the adapter keeps its default receive filter.
+- PIDs choose the ECU as before: mode `22` uses the entry whose `id_value` is `"22"`;
+  another ECU needs `"overrides": {"canMode": "EGS"}` in the PID JSON.
+- What is sent when switching to such an entry: `ATSH6F1`, `ATCEA12`, `ATCRA612`,
+  `ATFCSH6F1`, `ATFCSD12300000`, `ATFCSM1`. Switching back to a normal header sends
+  `ATCEA`, `ATCRA`, `ATFCSM0` before its `ATSH` (only when the table has an extended entry).
+- Replies: the `F1` (tester address) byte is stripped while `ATCEA<ecu>` is active, also with
+  the PCI byte / padding or after every `N:` of a multi-frame reply, in case the vLinker shows
+  them. Replies without it pass unchanged.
+- No UI for the two keys yet: they come from the profile, and editing a table entry in the
+  app keeps them.
+- To check on the car (debug logs, `TX:` / `RX:` lines): that the vLinker accepts each AT
+  command with `OK`, what a DDE reply looks like, and that a multi-frame reply (e.g. VIN
+  `22F190`) decodes. STN batch queries (`STPX H:`) leave out the header for these entries
+  and rely on the `ATSH`/`ATCEA` already sent; not tested on an STN chip.
 
 ## 1. Ten indicators for a 520d MHEV
 

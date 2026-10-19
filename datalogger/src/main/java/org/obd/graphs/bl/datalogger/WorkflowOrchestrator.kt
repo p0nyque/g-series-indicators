@@ -458,9 +458,7 @@ internal class WorkflowOrchestrator internal constructor() {
         val init  = Init.builder()
             .delayAfterInit(preferences.adapter.initDelay)
             .delayAfterReset(preferences.adapter.delayAfterReset)
-            .headers(DiagnosticRequestIDManager.getMapping().map { entry ->
-                Init.Header.builder().mode(entry.key).header(entry.value).build()
-            }.toMutableList())
+            .headers(initHeaders(DiagnosticRequestIDManager.getMappings()).toMutableList())
             .protocol(Init.Protocol.valueOf(preferences.adapter.initProtocol))
             .networkRegistry(networkRegistry(preferences.adapter.type))
             .sequence(sequence(preferences.adapter.initSequence)).build()

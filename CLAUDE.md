@@ -460,6 +460,18 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
   for `RoutinesScreen`) gets the parent's pause when it is pushed, so its receiver should unregister while
   it is on screen (read from the code, not yet confirmed on a DHU). `DiagnosticTroubleCodesScreen` observes its own lifecycle instead.
 
+### CAN extended addressing (BMW F/G)
+* Spec `doc/specs/bmw-extended-addressing.md`. A header table entry may carry `extended_address_value` /
+  `receive_address_value` (profile keys only, no UI); ObdMetrics `Init.Header.commands()` turns it into
+  `ATSH`/`ATCEA`/`ATCRA`/`ATFCSH`/`ATFCSD..300000`/`ATFCSM1`. Any new code path that sets a header must use
+  `commands()`, never `new ATCommand("SH" + ..)`, or the adapter stays on the last module's extended address.
+* BMW modules share header `6F1`: anything keyed by header alone (e.g. `dtcScanTargets`) must add the extended address.
+* The `F1` reply byte is stripped in ObdMetrics' `StreamingConnector` while `ATCEA<hh>` is on, not in the codecs.
+* Profile loader stores an unquoted numeric value as `Int`; `Prefs.getString` on it throws. Quote `"12"` in profiles,
+  read such keys via `Prefs.all[key]?.toString()`.
+* ObdMetrics on this Mac: `mvn` with JDK 11 (`~/Library/Android/jdk/jdk-11*`), `-Dlombok.delombok.skip=true`. On JDK 17
+  delombok fails and ~800 tests fail (no Nashorn JS engine for formulas) — not a code problem.
+
 ### Readiness monitors (phone)
 * Spec `doc/specs/readiness-monitors.md`. ObdMetrics decodes 01 01 / 01 41 (`ReadinessMonitorsCodec`, ids 21010 /
   21011, `"category": "readiness"`) into a `ReadinessStatus` object, not a number. Hence `isReadinessPid()` keeps

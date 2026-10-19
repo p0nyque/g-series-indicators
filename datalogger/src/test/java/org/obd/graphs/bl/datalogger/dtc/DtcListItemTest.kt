@@ -243,6 +243,22 @@ class DtcListItemTest {
     }
 
     @Test
+    fun `modules behind one gateway header are told apart by their extended address`() {
+        val mappings =
+            listOf(
+                DiagnosticMappingItem(1, "DDE", "6F1", "Engine", extendedAddress = "12", receiveAddress = "612"),
+                DiagnosticMappingItem(2, "EGS", "6F1", "Gearbox", extendedAddress = "18", receiveAddress = "618"),
+                DiagnosticMappingItem(3, "DDE2", "6F1", "Engine again", extendedAddress = "12")
+            )
+        val headers = dtcScanHeaders(mappings, setOf("DDE", "EGS", "DDE2"), emptySet())
+
+        assertEquals(listOf("Engine", "Gearbox"), headers.map { it.mode })
+        assertEquals(listOf("12", "18"), headers.map { it.extendedAddress })
+        assertEquals(listOf("612", "618"), headers.map { it.receiveAddress })
+        assertTrue(headers.all { it.isExtendedAddressing })
+    }
+
+    @Test
     fun `the read on connect scans every configured module, ignoring the picker`() {
         val mappings =
             listOf(

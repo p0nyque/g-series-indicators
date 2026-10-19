@@ -402,14 +402,15 @@ fun List<DtcListItem>.toDtcSections(): List<DtcSection> {
 // The table entries a DTC read/clear actually targets: the selected ones that have a header, one per
 // header. Two entries may name the same ECU (e.g. "Engine ECU" and "Engine ECU (2.0 GME)", both
 // DA10F1); once codes carry their module, scanning both lists every code of that ECU twice.
-// The first entry in table order names the section.
+// The first entry in table order names the section. With CAN extended addressing (BMW) every module shares the
+// header (6F1) and only the extended address tells them apart, so it is part of the key.
 fun dtcScanTargets(
     mappings: List<DiagnosticMappingItem>,
     selected: Set<String>
 ): List<DiagnosticMappingItem> =
     mappings
         .filter { it.headerValue.isNotEmpty() && it.requestKey in selected }
-        .distinctBy { it.headerValue.trim().uppercase() }
+        .distinctBy { it.headerValue.trim().uppercase() + "/" + it.extendedAddress }
 
 // The scan targets as ObdMetrics modules: label (Init.Header.mode, shown in the DTC list), header, and the OBD-II
 // protocol for the entries in obdModules.
@@ -423,6 +424,8 @@ fun dtcScanHeaders(
             .builder()
             .mode(it.displayName)
             .header(it.headerValue)
+            .extendedAddress(it.extendedAddress)
+            .receiveAddress(it.receiveAddress)
             .dtcProtocol(if (it.requestKey in obdModules) Init.DtcProtocol.OBD else Init.DtcProtocol.UDS)
             .build()
     }

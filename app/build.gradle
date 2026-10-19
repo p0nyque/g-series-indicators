@@ -40,7 +40,7 @@ android {
         testFunctionalTest false
         testHandleProfiling false
         resValue "string", "DEFAULT_PROFILE", "profile_1"
-        archivesBaseName = "MyGiulia.$versionName"
+        archivesBaseName = "GSeriesIndicators.$versionName"
     }
 
     sourceSets {

@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="nav_open">Otwórz</string>
     <string name="nav_close">Zamknij</string>
-    <string name="app_name">My Giulia</string>
+    <string name="app_name">G-Series Indicators</string>
 
     <string name="shortcut.graph.short_label">Wykres</string>
     <string name="shortcut.graph.long_label">Otwórz Wykres</string>

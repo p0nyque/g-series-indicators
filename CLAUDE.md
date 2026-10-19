@@ -110,7 +110,9 @@ This checkout is the user's private fork, not upstream ObdGraphs. The rules belo
 
 **Repos and remotes.** App: `origin` = `p0nyque/g-series-indicators` (private; was `oldschool-indicators`), `upstream` =
 `tzebrowski/ObdGraphs`. Library: `../ObdMetrics`, `origin` = `p0nyque/ObdMetrics` (private, default branch
-`feat/bmw-extended-addressing`), `upstream` = `tzebrowski/ObdMetrics`. The app builds against that branch
+`feat/bmw-extended-addressing`), `upstream` = `tzebrowski/ObdMetrics`. The APK (`archivesBaseName` `GSeriesIndicators`)
+and launcher label (`app_name`, "G-Series Indicators") carry the new name. The applicationIds stay `org.obd.graphs.my.giulia*`
+by the user's choice: a new id installs as a separate app, without the old one's settings, profiles or DTC history. The app builds against that branch
 installed into `~/.m2`. GitHub Actions are off on both repos: upstream's workflows need secrets and the
 published ObdMetrics snapshot, so they would only fail.
 

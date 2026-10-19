@@ -1,7 +1,7 @@
 # Spec: Classic dashboard (BMW G31 520d MHEV, Android Auto)
 
-2026-10-19 · Status: phase 1 implemented (screen on mock data, placeholder DIDs); BMW DIDs not yet discovered
-(marked **TBD**). Phases: [tech design §5](classic-dashboard-tech.md#5-phases).
+2026-10-19 · Status: phase 1 implemented (screen on mock data); candidate DIDs from BMW's ECU descriptions in the PID file, not yet seen on the car.
+Phases: [tech design §5](classic-dashboard-tech.md#5-phases).
 Restyled 2026-10-19. The round-dial layout stays. Colours and styling follow the G31 LCI's Live Cockpit cluster
 (user's reference photo).
 
@@ -31,17 +31,17 @@ Ranges and printed zones are scale design only. Tune them on the car.
 
 | Slot | Indicator | Source | Request | Dial | Scale (numerals) | Printed zones | Readout |
 |---|---|---|---|---|---|---|---|
-| M1 | Engine oil temp | DDE (`12`) | `22 <DID TBD>` | main | 50–150 °C (50, 70 … 150) | red 130–150 | `98` °C |
+| M1 | Engine oil temp | DDE (`12`) | `22 4517` | main | 50–150 °C (50, 70 … 150) | red 130–150 | `98` °C |
 | M2 | Coolant temp | OBD-II | `01 05`, id 6 | main | 40–130 °C (40, 70, 100, 130) | blue 40–60, red 115–130 | `91` °C |
-| M3 | Boost actual + target | DDE (`12`), fallback `01 0B` (id 99) | actual `22 <DID TBD>`, target `22 <DID TBD>` | main + target marker | 0–2.0 bar (0, 0.5 … 2.0) | — | `1.42` bar, `TARGET 1.60` |
-| M4 | Gearbox (8HP) oil temp | EGS (`18`) | `22 <DID TBD>` | main | 40–140 °C (40, 60 … 140) | red 120–140 | `78` °C |
+| M3 | Boost actual + target | DDE (`12`), fallback `01 0B` (id 99) | actual `22 4841`, target `22 42C8` | main + target marker | 0–2.0 bar (0, 0.5 … 2.0) | — | `1.42` bar, `TARGET 1.60` |
+| M4 | Gearbox (8HP) oil temp | EGS (`18`) | `22 DA12` | main | 40–140 °C (40, 60 … 140) | red 120–140 | `78` °C |
 | S1 | Intake air temp | OBD-II | `01 0F`, id 16 | sub | −20–80 °C (−20, 30, 80) | — | `24` °C |
-| S2 | Exhaust gas temp before DPF | DDE (`12`), fallback `01 78` | `22 <DID TBD>` | sub | 0–900 °C (0, 450, 900) | red 750–900 | `310` °C |
-| S3 | Engine oil level | DDE (`12`), oil condition sensor | `22 <DID TBD>` | sub, level | MIN – MAX (no numbers) | — | none (like a fuel gauge) |
-| S4 | 48 V battery state of charge | 48 V battery / DC-DC module (address TBD) | `22 <DID TBD>` | sub | 0–100 % (0, 50, 100) | — | `72` % |
-| S5 | Starter-generator power | DDE or BSG module (TBD) | `22 <DID TBD>` | sub, centre-zero | −10–+10 kW (−10, 0, +10) | — | `+3.2` kW |
+| S2 | Exhaust gas temp before DPF | DDE (`12`), fallback `01 78` | `22 434A` | sub | 0–900 °C (0, 450, 900) | red 750–900 | `310` °C |
+| S3 | Engine oil level | DDE (`12`), oil condition sensor | `22 4521` (mm) | sub, level | MIN – MAX (no numbers) | — | none (like a fuel gauge) |
+| S4 | 48 V battery state of charge | 48 V battery (`02`) | `22 D08C` byte 14 | sub | 0–100 % (0, 50, 100) | — | `72` % |
+| S5 | Starter-generator power | 48 V battery (`02`), as battery power | `22 D08C` V × A | sub, centre-zero | −10–+10 kW (−10, 0, +10) | — | `+3.2` kW |
 | S6 | 12 V system voltage | OBD-II | `01 42`, id 67 | sub | 10–16 V (10, 13, 16) | — | `14.1` V |
-| T1 | DPF regeneration active + distance since last regen | DDE (`12`) | two DIDs, TBD | lamp + text | — | — | `312 km SINCE REGEN` |
+| T1 | DPF regeneration active + distance since last regen | DDE (`12`) | `22 44BB` (regen request), `22 44BF` (m) | lamp + text | — | — | `312 km SINCE REGEN` |
 
 Supporting PID: barometric pressure `01 33` (id 52), used to turn absolute boost into relative boost. It is queried but
 not drawn.
@@ -157,7 +157,7 @@ Roboto's light weight comes closest and ships on every device. The background st
   | `mode_1` | `"01"` | `7E0` (proposed; `7DF` may draw two replies, tech design Q5) | — | — | OBD-II |
   | `mode_2` | `"22"` | `6F1` | `"12"` | `"612"` | DDE |
   | `mode_3` | `"EGS"` | `6F1` | `"18"` | `"618"` | EGS |
-  | `mode_4` | `"BAT48"` | `6F1` | TBD | TBD | 48 V battery / DC-DC |
+  | `mode_4` | `"BAT48"` | `6F1` | `02` | `602` | 48 V battery |
 
   `pref.pids.registry.list=[mode01.json, mode01_2.json, bmw_b47_mhev.json]`.
 - New PID file `bmw_b47_mhev.json` in `datalogger/src/main/resources/` (found by the class loader like ObdMetrics' own files; no jar rebuild per DID). Ids `40001`–`40099`
@@ -173,10 +173,12 @@ static-layer bitmap per area size, `ClassicQueryStrategy` (`CLASSIC_QUERY`) over
 
 ### DID discovery (blocks M1, M3, M4, S2–S5, T1)
 
-1. Deep OBD on the car: list the DDE (`12`), EGS (`18`) and 48 V module jobs. Note each job's DID, length and scaling.
-2. Cross-check each value against BimmerLink on the same drive: same reading ± rounding.
-3. If a value is missing there, log BimmerLink's requests (vLinker sniffing or a CAN logger on the OBD port).
-4. Fill the TBDs in this spec and in `bmw_b47_mhev.json`. Each PID gets `min`/`max` = the indicator's scale.
+1. ✅ Candidates from BMW's ECU descriptions (SGBDs), with alternates: tech design §4.3. The DIDs above are the
+   first choice. Alternates are queried as probe PIDs `40101`–`40113` (never drawn).
+2. One drive: see which DIDs answer (logcat `TX:` / `RX:`, or pick the probe PIDs in a Trip Info PID dialog).
+   Cross-check each value against BimmerLink: same reading ± rounding.
+3. If a value is missing, log BimmerLink's requests (Android Bluetooth HCI snoop log).
+4. Keep the DIDs that match, drop the probes, update this table and §4.3.
 
 ## Backward compatibility
 
@@ -189,7 +191,7 @@ See [classic-dashboard-tech.md §7](classic-dashboard-tech.md#7-tests).
 
 ## Risks and verification checklist
 
-- [ ] Every TBD DID found and cross-checked against BimmerLink.
+- [ ] Every candidate DID answers on the car and matches BimmerLink (or an alternate from §4.3 does).
 - [ ] Refresh rate with four headers in one query. Every switch to an extended entry costs six AT commands. If boost
       feels laggy, check the `TX:` log and group PIDs per ECU, or poll the slow ones less often.
 - [ ] Boost: relative value at idle ≈ 0 bar. Target marker moves with load.

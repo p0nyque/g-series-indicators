@@ -20,7 +20,8 @@ package org.obd.graphs.bl.query
  * Every PID the Classic dashboard queries (doc/specs/classic-dashboard.md). The one place these ids are
  * written down: the query reads them here and the renderer's slot table refers to them.
  *
- * Mode 01 ids come from ObdMetrics' mode01.json / mode01_2.json; the 40xxx ids from bmw_b47_mhev.json.
+ * Mode 01 ids come from ObdMetrics' mode01.json / mode01_2.json; the 40xxx ids from bmw_b47_mhev.json, whose DIDs are
+ * candidates from BMW's ECU descriptions (doc/specs/classic-dashboard-tech.md §4.3) until seen on the car.
  */
 object ClassicPids {
     // OBD-II (mode 01)
@@ -36,7 +37,7 @@ object ClassicPids {
     const val BOOST_TARGET = 40003L // bar absolute
     const val EXHAUST_TEMP = 40004L
     const val OIL_LEVEL = 40005L
-    const val STARTER_GENERATOR_POWER = 40006L // kW, + assist, - recuperation
+    const val STARTER_GENERATOR_POWER = 40006L // kW, + assist, - recuperation; read as 48 V battery power (BAT48)
     const val DPF_REGEN_ACTIVE = 40007L
     const val DPF_REGEN_DISTANCE = 40008L // km since the last regeneration
 
@@ -45,6 +46,12 @@ object ClassicPids {
 
     // 48 V battery / DC-DC module
     const val BATTERY_48V_SOC = 40030L
+
+    /**
+     * Alternative DIDs for the same quantities, queried but never drawn, so one drive shows which of them answer
+     * (pick them in a Trip Info / Gauge PID dialog, or read TX/RX in logcat). Remove once the real DIDs are known.
+     */
+    val PROBES: Set<Long> = (40101L..40113L).toSet()
 
     val ALL: Set<Long> =
         setOf(
@@ -63,5 +70,5 @@ object ClassicPids {
             DPF_REGEN_DISTANCE,
             GEARBOX_OIL_TEMP,
             BATTERY_48V_SOC
-        )
+        ) + PROBES
 }

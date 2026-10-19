@@ -396,6 +396,8 @@ internal class SetupProfilesTest : TestSetup() {
         verify { editor.updatePreference("$mode.extended_address_value.mode_3", "18") }
         verify { editor.updatePreference("$mode.receive_address_value.mode_3", "618") }
         verify { editor.updatePreference("$mode.id_value.mode_4", "BAT48") }
+        verify { editor.updatePreference("$mode.extended_address_value.mode_4", "02") }
+        verify { editor.updatePreference("$mode.receive_address_value.mode_4", "602") }
         verify { editor.updatePreference("profile_21.pref.pids.registry.list", setOf("mode01.json", "mode01_2.json", "bmw_b47_mhev.json")) }
         verify { editor.updatePreference("profile_21.pref.adapter.stn.enabled", false) }
         verify { editor.updatePreference("profile_21.pref.adapter.init.protocol", "CAN_11") }

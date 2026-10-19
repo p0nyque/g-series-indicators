@@ -4,15 +4,14 @@
     {
       "id": "40001",
       "mode": "22",
-      "pid": "FD01",
-      "length": 1,
+      "pid": "4517",
+      "length": 2,
       "description": "Engine Oil\nTemp",
       "min": 50,
       "max": 150,
       "units": "C",
       "priority": 1,
-      "formula": "A-40",
-      "type": "INT",
+      "formula": "parseFloat(((A*256+B)*0.01-100).toFixed(1))",
       "overrides": {
         "batchEnabled": false
       }
@@ -20,14 +19,14 @@
     {
       "id": "40002",
       "mode": "22",
-      "pid": "FD02",
+      "pid": "4841",
       "length": 2,
       "description": "Boost\nActual",
       "min": 1.0,
       "max": 3.0,
       "units": "bar",
       "priority": 0,
-      "formula": "parseFloat(((A*256+B)/1000).toFixed(3))",
+      "formula": "parseFloat(((A*256+B)*0.15259022/1000).toFixed(3))",
       "overrides": {
         "batchEnabled": false
       }
@@ -35,14 +34,14 @@
     {
       "id": "40003",
       "mode": "22",
-      "pid": "FD03",
+      "pid": "42C8",
       "length": 2,
       "description": "Boost\nTarget",
       "min": 1.0,
       "max": 3.0,
       "units": "bar",
       "priority": 0,
-      "formula": "parseFloat(((A*256+B)/1000).toFixed(3))",
+      "formula": "parseFloat(((A*256+B)*0.09155413/1000).toFixed(3))",
       "overrides": {
         "batchEnabled": false
       }
@@ -50,14 +49,14 @@
     {
       "id": "40004",
       "mode": "22",
-      "pid": "FD04",
+      "pid": "434A",
       "length": 2,
       "description": "Exhaust Temp\nbefore DPF",
       "min": 0,
       "max": 900,
       "units": "C",
       "priority": 1,
-      "formula": "(A*256+B)/10",
+      "formula": "parseFloat(((A*256+B)*0.1-3276.7).toFixed(1))",
       "overrides": {
         "batchEnabled": false
       }
@@ -65,15 +64,14 @@
     {
       "id": "40005",
       "mode": "22",
-      "pid": "FD05",
+      "pid": "4521",
       "length": 1,
       "description": "Engine Oil\nLevel",
       "min": 0,
-      "max": 100,
-      "units": "",
+      "max": 75,
+      "units": "mm",
       "priority": 2,
-      "formula": "A",
-      "type": "INT",
+      "formula": "parseFloat((A*0.29296875).toFixed(1))",
       "overrides": {
         "batchEnabled": false
       }
@@ -81,24 +79,25 @@
     {
       "id": "40006",
       "mode": "22",
-      "pid": "FD06",
-      "length": 2,
-      "description": "Starter-Generator\nPower",
+      "pid": "D08C",
+      "length": 28,
+      "description": "48V Battery\nPower",
       "min": -10,
       "max": 10,
       "units": "kW",
       "priority": 0,
-      "formula": "((A*256+B) << 16 >> 16)/100",
+      "formula": "parseFloat((((A*256+B) << 16 >> 16)/100*((C*256+D) << 16 >> 16)/10/1000).toFixed(3))",
       "overrides": {
+        "canMode": "BAT48",
         "batchEnabled": false
       }
     },
     {
       "id": "40007",
       "mode": "22",
-      "pid": "FD07",
+      "pid": "44BB",
       "length": 1,
-      "description": "DPF Regeneration\nActive",
+      "description": "DPF Regeneration\nRequest",
       "min": 0,
       "max": 1,
       "units": "",
@@ -112,15 +111,14 @@
     {
       "id": "40008",
       "mode": "22",
-      "pid": "FD08",
-      "length": 2,
+      "pid": "44BF",
+      "length": 4,
       "description": "Distance since\nDPF Regeneration",
       "min": 0,
       "max": 1000,
       "units": "km",
       "priority": 2,
-      "formula": "A*256+B",
-      "type": "INT",
+      "formula": "parseFloat(((A*16777216+B*65536+C*256+D)/1000).toFixed(1))",
       "overrides": {
         "batchEnabled": false
       }
@@ -128,14 +126,14 @@
     {
       "id": "40020",
       "mode": "22",
-      "pid": "FD20",
-      "length": 1,
+      "pid": "DA12",
+      "length": 2,
       "description": "Gearbox Oil\nTemp",
       "min": 40,
       "max": 140,
       "units": "C",
       "priority": 1,
-      "formula": "A-40",
+      "formula": "((A*256+B) << 16 >> 16)-48",
       "type": "INT",
       "overrides": {
         "canMode": "EGS",
@@ -145,17 +143,217 @@
     {
       "id": "40030",
       "mode": "22",
-      "pid": "FD30",
-      "length": 1,
+      "pid": "D08C",
+      "length": 28,
       "description": "48V Battery\nState of Charge",
       "min": 0,
       "max": 100,
       "units": "%",
       "priority": 1,
-      "formula": "A",
+      "formula": "O",
       "type": "INT",
       "overrides": {
         "canMode": "BAT48",
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40101",
+      "mode": "22",
+      "pid": "4B60",
+      "length": 2,
+      "description": "Probe: Oil Temp\n(Oil_tSwmp)",
+      "min": 50,
+      "max": 150,
+      "units": "C",
+      "priority": 2,
+      "formula": "parseFloat(((A*256+B)*0.01-100).toFixed(1))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40102",
+      "mode": "22",
+      "pid": "428E",
+      "length": 2,
+      "description": "Probe: Oil Temp\n(Toel)",
+      "min": 50,
+      "max": 150,
+      "units": "C",
+      "priority": 2,
+      "formula": "parseFloat(((A*256+B)*0.00541695-100).toFixed(1))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40103",
+      "mode": "22",
+      "pid": "47F0",
+      "length": 2,
+      "description": "Probe: Boost Actual\n(Air_pSensPIntkVUs)",
+      "min": 1.0,
+      "max": 3.0,
+      "units": "bar",
+      "priority": 2,
+      "formula": "parseFloat((((A*256+B)-32767)/1000).toFixed(3))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40104",
+      "mode": "22",
+      "pid": "42C5",
+      "length": 2,
+      "description": "Probe: Boost Target\n(PCR_pDesValMdl)",
+      "min": 1.0,
+      "max": 3.0,
+      "units": "bar",
+      "priority": 2,
+      "formula": "parseFloat((((A*256+B)-32767)/1000).toFixed(3))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40105",
+      "mode": "22",
+      "pid": "4502",
+      "length": 2,
+      "description": "Probe: Exhaust Temp\n(Exh_tSensTPFltUs)",
+      "min": 0,
+      "max": 900,
+      "units": "C",
+      "priority": 2,
+      "formula": "parseFloat(((A*256+B)*0.03128099-50).toFixed(1))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40106",
+      "mode": "22",
+      "pid": "4523",
+      "length": 1,
+      "description": "Probe: Oil Level\n(short-term)",
+      "min": 0,
+      "max": 75,
+      "units": "mm",
+      "priority": 2,
+      "formula": "parseFloat((A*0.29296875).toFixed(1))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40107",
+      "mode": "22",
+      "pid": "422C",
+      "length": 1,
+      "description": "Probe: Oil Level\n(relative)",
+      "min": 0,
+      "max": 255,
+      "units": "",
+      "priority": 2,
+      "formula": "A",
+      "type": "INT",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40108",
+      "mode": "22",
+      "pid": "4B9E",
+      "length": 2,
+      "description": "Probe: Starter-Generator\nTorque",
+      "min": -100,
+      "max": 100,
+      "units": "Nm",
+      "priority": 2,
+      "formula": "parseFloat(((A*256+B)*0.5).toFixed(1))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40109",
+      "mode": "22",
+      "pid": "4BA3",
+      "length": 2,
+      "description": "Probe: Starter-Generator\nCurrent",
+      "min": -300,
+      "max": 300,
+      "units": "A",
+      "priority": 2,
+      "formula": "parseFloat(((A*256+B)*0.2).toFixed(1))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40110",
+      "mode": "22",
+      "pid": "4B9F",
+      "length": 2,
+      "description": "Probe: Starter-Generator\nVoltage",
+      "min": 0,
+      "max": 60,
+      "units": "V",
+      "priority": 2,
+      "formula": "parseFloat(((A*256+B)*0.1).toFixed(1))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40111",
+      "mode": "22",
+      "pid": "467E",
+      "length": 4,
+      "description": "Probe: Operating Mode\n(CoEOM_stOpModeAct)",
+      "min": 0,
+      "max": 4294967295,
+      "units": "",
+      "priority": 2,
+      "formula": "(A*16777216+B*65536+C*256+D)",
+      "type": "INT",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40112",
+      "mode": "22",
+      "pid": "6000",
+      "length": 1,
+      "description": "Probe: Gearbox Oil Temp\n(EGS 6000)",
+      "min": 40,
+      "max": 140,
+      "units": "C",
+      "priority": 2,
+      "formula": "A-40",
+      "type": "INT",
+      "overrides": {
+        "canMode": "EGS",
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40113",
+      "mode": "22",
+      "pid": "4F7B",
+      "length": 1,
+      "description": "Probe: Gearbox Oil Temp\n(DDE Tra_tOil)",
+      "min": 40,
+      "max": 140,
+      "units": "C",
+      "priority": 2,
+      "formula": "A-40",
+      "type": "INT",
+      "overrides": {
         "batchEnabled": false
       }
     }

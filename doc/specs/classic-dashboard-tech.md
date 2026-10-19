@@ -26,7 +26,7 @@ What the existing code gives us, and what it means for this screen.
 | F13 | Debug builds have a `mock` connection: `SmartMockConnectionFactory` answers **every PID in the registry** with a sawtooth. | `ConnectionManager.mockConnection` | The whole screen, BMW slots included, can be built and checked on the DHU before any DID is known, using placeholder DIDs (§5, phase 1). |
 | F14 | Bundled fonts: `Roboto-Regular.ttf`, `Roboto-LightItalic.ttf`. No upright Roboto Light. | `screen_renderer/src/main/assets/fonts/` | Add `Roboto-Light.ttf` (Apache 2.0, same family): Samsung's font setting replaces the system `sans-serif-light`. Added: v2.137 from `google/fonts` commit `724bf98e` (`apache/roboto/`), the release of the bundled Regular (same glyphs; ours has a trimmed `cmap` / `name`). No fallback. |
 | F15 | Profiles: ids in use `profile_1`–`10`, `13`–`15`, `20`. AA profiles live in `automotive/src/main/assets/`. | `*.properties` | New profile `profile_21`. |
-| F16 | Web search (forums, 2026-10-19): no public B47 DDE DID list. One F11 thread reports BMW DDEs wanting dynamically defined DIDs (UDS `2C`) instead of plain `22` reads. | see Sources | DIDs must be found on the car. If plain `22` is refused, ObdMetrics needs `2C` support (Q2). |
+| F16 | Forums (2026-10-19) have no B47 DID list. BMW's own ECU descriptions (SGBDs) are public as Markdown in `emdzej/ediabasx-docs-sgbd`. Their `SG_FUNKTIONEN` table gives each value's DID, data type and scaling for DDE 8.32 (`D83BX7C0`, B47/B57, with the 48 V starter-generator signals), the 48 V battery (`BATT48`), the DC/DC (`PCU48`) and the 8HP gearbox (`GSZFB1`, `GSZFBCE`). The SP2018 gateway (`ZGW_SP18`) lists the diagnostic addresses. These are UDS SGBDs (`STATUS_LESEN` = `22`), so plain `22` reads should work. | see Sources | Candidate DIDs in §4.3, to verify on the car. The 520d MHEV may run DDE 8.02 (Bosch MD1CS001), whose SGBD is not in the repo, so the DDE DIDs are likely but not certain. |
 
 ## 2. Open questions and missing info
 
@@ -34,9 +34,9 @@ Blocking = work that cannot finish without the answer. Each has an assumption so
 
 | # | Question | Blocks | Who / how | Assumption until answered |
 |---|---|---|---|---|
-| Q1 | **DIDs, lengths and scalings** for oil temp, boost actual/target, gearbox oil temp, EGT, oil level (+ raw MIN/MAX, "not measured" value), 48 V SOC, starter-generator power, regen active, km since regen. | Phase 2 (M1, M3, M4, S2–S5, T1) | User, on the car: Deep OBD job list for DDE `12`, EGS `18`, 48 V module; cross-check with BimmerLink. | Placeholder DIDs in a dev PID file (§5). Slots draw mock data on the DHU. |
+| Q1 | **DIDs, lengths and scalings** for oil temp, boost actual/target, gearbox oil temp, EGT, oil level (+ raw MIN/MAX, "not measured" value), 48 V SOC, starter-generator power, regen active, km since regen. | Phase 2 (M1, M3, M4, S2–S5, T1) | **Candidates in §4.3** (from BMW SGBDs). Verify on the car: each DID answers, and its value matches BimmerLink. | Placeholder DIDs in a dev PID file (§5). Slots draw mock data on the DHU. |
 | Q2 | Does the DDE answer a plain `22 <DID>` behind `6F1`/`CEA 12`, or only `2C`-defined DIDs? Does it accept several DIDs in one `22` request (batch)? | Phase 2 | User, on the car: send one known DID by hand (e.g. `22F190`, VIN, multi-frame) and one live value. | Plain `22` works; mode-22 PIDs set `"batchEnabled": false` until a batched reply is seen to decode. If only `2C` works: new ObdMetrics feature, separate spec. |
-| Q3 | Which module carries the 48 V SOC and the starter-generator power, and its address (`ATCEA`) / reply id? | S4, S5 | Deep OBD module list (look for the 48 V battery / DC-DC / starter-generator entries). | `mode_4` `BAT48` entry left with placeholder address; both slots at rest on the car. |
+| Q3 | Which module carries the 48 V SOC and the starter-generator power, and its address (`ATCEA`) / reply id? | S4, S5 | **Answered from the SGBDs (F16), verify on the car:** 48 V battery `BATT48` at `0x02` (reply `602`). DID `D08C` holds SOC and pack voltage / current, so battery power comes from one reply. The starter-generator has no address of its own. The DDE mirrors it (`4B9E` torque, `4BA3` current). | `mode_4` = `6F1` / CEA `02` / receive `602`. |
 | Q4 | vLinker model (MC+ Classic BT or BM+ / BLE?) and whether it answers `OK` to `ATCEA`, `ATCRA`, `ATFCSH`, `ATFCSD`, `ATFCSM`. | Phase 2 | User: label on the adapter; one session with logs (`TX:`/`RX:`). | Bluetooth Classic (`bluetooth`). |
 | Q5 | Mode 01 header: functional `7DF` (spec) or physical `7E0`? With `7DF`, both DDE and EGS may answer a mode 01 request, and a two-ECU reply can mis-decode. | Phase 1 on the car | User: one log of `01 05` with each header. | **`7E0`**, receive `7E8`. Change the main spec's header table if confirmed. |
 | Q6 | Frame rate for this profile: 15 fps (smooth easing, more phone heat/battery) vs the app's 5? | — | User's choice. | `pref.aa.surface.fps="15"` in the BMW profile only. |
@@ -155,9 +155,37 @@ Same schema as `giulia_2.0_gme.json`, group `livedata`. Ids `40001`–`40099`. R
   | 40020 | Gearbox oil temp | `EGS` |
   | 40030 | 48 V SOC (%) | `BAT48` |
 
-- **Phase 1 ships placeholder DIDs `FD01`–`FD30`** (system-supplier range, read-only, so harmless on the car) and
-  placeholder scalings. JSON has no comments: the placeholders are recorded here and in CLAUDE.md. Replace them in
-  phase 2; on the car they answer NO DATA or a negative response and their slots stay at rest.
+- Phase 1 shipped placeholder DIDs `FD01`–`FD30`. Since 2026-10-19 the file holds the §4.3 candidates, plus the
+  alternates as **probe PIDs `40101`–`40113`** (`ClassicPids.PROBES`, priority 2, description "Probe: …"). Probes are
+  queried but never drawn. Drop them once the car shows which DID answers.
+
+### 4.3 Candidate DIDs (from BMW SGBDs, 2026-10-19, not yet seen on the car)
+
+Source: `SG_FUNKTIONEN` tables in `emdzej/ediabasx-docs-sgbd` (F16). Values are big-endian; `uint16` = `A*256+B`.
+"Alt" = a second DID for the same quantity, to try if the first is refused. Every DDE row is from DDE 8.32
+(`D83BX7C0`); the car may run DDE 8.02, so check each one on the car.
+
+| Id | Indicator | ECU (addr) | DID | Len | Formula → display | Alt |
+|---|---|---|---|---|---|---|
+| 40001 | Oil temp | DDE (`12`) | `4517` ITOEL | 2 | `uint16*0.01-100` °C | `4B60` same scaling; `428E` `uint16*0.00541695-100` |
+| 40002 | Boost actual | DDE | `4841` IPLAD | 2 | `uint16*0.15259022/1000` bar abs | `47F0` `(uint16-32767)/1000` |
+| 40003 | Boost target | DDE | `42C8` SPLAD | 2 | `uint16*0.09155413/1000` bar abs | `42C5` `(uint16-32767)/1000` |
+| 40004 | EGT before DPF | DDE | `434A` TPFltUs_t | 2 | `uint16*0.1-3276.7` °C | `4502` `uint16*0.03128099-50` |
+| 40005 | Oil level | DDE | `4521` long-term average | 1 | `A*0.29296875` mm | `4523` short-term (same scaling); `422C` relative, raw |
+| 40006 | 48 V power | `BATT48` (`02`) | `D08C` | 28 | `int16(A,B)/100 * int16(C,D)/10 / 1000` kW, + = discharge (assist) | DDE `4B9E` SGE torque `uint16*0.5` Nm (sign unclear), `4BA3` SGE current `uint16*0.2` A |
+| 40007 | Regen active | DDE | `44BB` PFltRgn_numRgn (regen request) | 1 | `A` (≠ 0 = requested) | `467E` CoEOM_stOpModeAct (operating-mode bits, layout unknown). The SGBD's `STATUS_REGENERATION_CSF` reads its flags through a dynamic DID (`2C`). |
+| 40008 | Km since regen | DDE | `44BF` IDSLRE | 4 | `uint32/1000` km | — |
+| 40020 | Gearbox oil temp | EGS (`18`) | `DA12` | 2 | `int16-48` °C | `6000` (8HP TÜ2018) `A-40`. Also in the DDE: `4F7B` Tra_tOil `A-40`, which saves a header switch. |
+| 40030 | 48 V SOC | `BATT48` (`02`) | `D08C` | 28 | byte 14 (`O`) % | — |
+
+Probe ids: `40101` `4B60`, `40102` `428E`, `40103` `47F0`, `40104` `42C5`, `40105` `4502`, `40106` `4523`, `40107` `422C`,
+`40108` `4B9E`, `40109` `4BA3`, `40110` `4B9F`, `40111` `467E`, `40112` EGS `6000`, `40113` DDE `4F7B`.
+`D08C` is 28 bytes; ObdMetrics bound every reply byte to a letter and threw past `Z`. Fixed in ObdMetrics
+(`ScriptEngineParameterBinder` ignores bytes past `Z`). The debug mock only fills `A`–`D`, so SOC shows 0 on the DHU.
+
+Extra values that may be useful: soot `44B9` `uint16*0.01` g, coolant `461B` and charge-air temperature `4843`
+(`uint16*0.01-100` °C), and ambient pressure `4CF0` `uint16*0.03051804` hPa.
+`DA12` is also confirmed on real G30 replies in OBDb (`004E` → 30 °C).
 
 ### 4.2 `bmw_g31_520d_mhev.properties` (`profile_21`, `automotive/src/main/assets/`)
 
@@ -236,3 +264,5 @@ Plain JUnit unless noted. Write the pure ones first; they pin the spec's numbers
 - [Extended PIDs BMW F11 (torque-bhp.com)](https://torque-bhp.com/community/main-forum/extended-pids-bmw-f11/paged/2/)
 - [Extended BMW 335d PIDs for Torque (e90post.com)](https://www.e90post.com/forums/showthread.php?t=1118429&page=4)
 - [How to see charge status of the 48V battery? (g05.bimmerpost.com)](https://g05.bimmerpost.com/forums/showthread.php?t=2041045)
+- [emdzej/ediabasx-docs-sgbd: BMW SGBDs as Markdown](https://github.com/emdzej/ediabasx-docs-sgbd) (`D83BX7C0`, `BATT48`, `PCU48`, `SGE48V`, `GSZFB1`, `GSZFBCE`, `ZGW_SP18`)
+- [OBDb/BMW-5-Series: community signal definitions with real G30 replies](https://github.com/OBDb/BMW-5-Series)

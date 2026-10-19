@@ -77,6 +77,8 @@ class ClassicDialsTest {
     @Test
     fun `every drawn PID is queried`() {
         assertTrue(ClassicPids.ALL.containsAll(CLASSIC_DRAWN_PIDS))
-        assertEquals(ClassicPids.ALL, CLASSIC_DRAWN_PIDS)
+        // Probe PIDs (alternative DIDs) are queried for discovery only, never drawn.
+        assertEquals(ClassicPids.ALL - ClassicPids.PROBES, CLASSIC_DRAWN_PIDS)
+        assertTrue(ClassicPids.PROBES.none { it in CLASSIC_DRAWN_PIDS })
     }
 }

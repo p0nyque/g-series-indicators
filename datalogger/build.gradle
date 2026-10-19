@@ -41,6 +41,12 @@ android {
     lint {
         disable 'KtxExtensionAvailable', 'GradleDependency', 'ViewConstructor', 'IconLauncherShape'
     }
+    testOptions {
+        unitTests.all {
+            // rhino-android (the app's formula engine) reads a JDK-internal class; tests run on JDK 17+.
+            jvmArgs '--add-exports', 'java.base/sun.security.action=ALL-UNNAMED'
+        }
+    }
     namespace "org.obd.graphs.datalogger"
 }
 

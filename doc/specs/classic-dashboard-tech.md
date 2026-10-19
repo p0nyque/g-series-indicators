@@ -24,7 +24,7 @@ What the existing code gives us, and what it means for this screen.
 | F11 | Mode 01 ids in ObdMetrics: coolant `6`, MAP `99` (bar abs, 1 byte, max 2.55), boost `12` (MAP − 1), IAT `16`, baro `52` (kPa), module voltage `67`. **`01 78` (EGT) is not defined** in `mode01.json`. | ObdMetrics `mode01.json`, `mode01_2.json` | The spec's EGT fallback `01 78` needs a new PID entry; B47s rarely answer it. Treat S2 as DDE-only. |
 | F12 | A PID file is listed in the profile's `pref.pids.registry.list` and found through the context class loader (ObdMetrics `Urls.resourceToUrl`); its display name comes from `Modules.overrides`. A file from phone storage (`storage:` prefix) is also accepted. | `common/.../Modules.kt`, `WorkflowOrchestrator.pids()` | Any module's `src/main/resources/` lands at the APK root next to `mode01.json`, so `bmw_b47_mhev.json` lives in the app (`:datalogger`), not in ObdMetrics: no jar rebuild per DID change. Phone storage stays an option for quick tries on the car. |
 | F13 | Debug builds have a `mock` connection: `SmartMockConnectionFactory` answers **every PID in the registry** with a sawtooth. | `ConnectionManager.mockConnection` | The whole screen, BMW slots included, can be built and checked on the DHU before any DID is known, using placeholder DIDs (§5, phase 1). |
-| F14 | Bundled fonts: `Roboto-Regular.ttf`, `Roboto-LightItalic.ttf`. No upright Roboto Light. | `screen_renderer/src/main/assets/fonts/` | Add `Roboto-Light.ttf` (Apache 2.0, same family): Samsung's font setting replaces the system `sans-serif-light`. **Not added yet** (needs a download): `ClassicDrawer` loads the asset if present and falls back to `sans-serif-light`. |
+| F14 | Bundled fonts: `Roboto-Regular.ttf`, `Roboto-LightItalic.ttf`. No upright Roboto Light. | `screen_renderer/src/main/assets/fonts/` | Add `Roboto-Light.ttf` (Apache 2.0, same family): Samsung's font setting replaces the system `sans-serif-light`. Added: v2.137 from `google/fonts` commit `724bf98e` (`apache/roboto/`), the release of the bundled Regular (same glyphs; ours has a trimmed `cmap` / `name`). No fallback. |
 | F15 | Profiles: ids in use `profile_1`–`10`, `13`–`15`, `20`. AA profiles live in `automotive/src/main/assets/`. | `*.properties` | New profile `profile_21`. |
 | F16 | Web search (forums, 2026-10-19): no public B47 DDE DID list. One F11 thread reports BMW DDEs wanting dynamically defined DIDs (UDS `2C`) instead of plain `22` reads. | see Sources | DIDs must be found on the car. If plain `22` is refused, ObdMetrics needs `2C` support (Q2). |
 
@@ -85,7 +85,7 @@ ScreenBehaviorController ◄── SurfaceRendererScreen     ├─ GaugeFrameSt
 | `ClassicSurfaceRenderer.kt` | `SurfaceRenderer`: area → layout (cached by area) → per slot: metric (primary, else fallback), staleness, reading, eased fraction → under layer, glow, over layer, values, strip. `isRunning` and `clock` are injectable. Not running: every slot at rest without easing, frame states cleared. `invalidate()` drops layout + bitmaps; `recycle()` also clears frame states. | no |
 | `api/SurfaceRendererType.kt` | `+ CLASSIC(6)`. | |
 | `api/SurfaceRenderer.kt` | `+ CLASSIC -> ClassicSurfaceRenderer(...)`. | |
-| `assets/fonts/Roboto-Light.ttf` | New (F14). | |
+| `assets/fonts/Roboto-Light.ttf` | New (F14). Done. | |
 
 `:screen_behavior` — `ClassicScreenBehavior.kt` (TripInfo pattern, `queryStrategyType() = CLASSIC_QUERY`),
 `ScreenBehaviorController` branch.

@@ -28,12 +28,9 @@ import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
-import android.util.Log
 import org.obd.graphs.renderer.R
 import kotlin.math.cos
 import kotlin.math.max
-
-private const val LOG_TAG = "ClassicDrawer"
 
 // Colour tokens (doc/specs/classic-dashboard.md, "Type and colour tokens").
 internal object ClassicColors {
@@ -83,8 +80,8 @@ internal class ClassicDialFrame(
 internal class ClassicDrawer(
     context: Context
 ) {
-    private val regular: Typeface = font(context, "fonts/Roboto-Regular.ttf", Typeface.DEFAULT)
-    private val light: Typeface = font(context, "fonts/Roboto-Light.ttf", Typeface.create("sans-serif-light", Typeface.NORMAL))
+    private val regular: Typeface = Typeface.createFromAsset(context.assets, "fonts/Roboto-Regular.ttf")
+    private val light: Typeface = Typeface.createFromAsset(context.assets, "fonts/Roboto-Light.ttf")
     private val bold: Typeface = Typeface.create(regular, Typeface.BOLD)
 
     private val labels = (CLASSIC_MAIN + CLASSIC_SUB).associate { it.labelRes to context.getString(it.labelRes) }
@@ -500,16 +497,4 @@ internal class ClassicDrawer(
         text.typeface = typeface
         text.letterSpacing = spacing / size
     }
-
-    private fun font(
-        context: Context,
-        asset: String,
-        fallback: Typeface
-    ): Typeface =
-        try {
-            Typeface.createFromAsset(context.assets, asset)
-        } catch (e: RuntimeException) {
-            Log.w(LOG_TAG, "Font $asset not bundled, using the system one")
-            fallback
-        }
 }

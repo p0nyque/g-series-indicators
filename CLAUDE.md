@@ -480,8 +480,9 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
 * Tech design (files, phases, open questions Q1–Q10): `doc/specs/classic-dashboard-tech.md`. Facts it rests on:
   AA frames default to **5 fps** (`pref.aa.surface.fps`), too slow for easing, so the BMW profile sets 15. The canvas is
   hardware (`lockHardwareCanvas`) and `BlurMaskFilter` is accelerated only from API 28 (minSdk 26), so the glow must
-  look acceptable without blur. Only `Roboto-Regular` / `Roboto-LightItalic` are bundled; add `Roboto-Light.ttf` and
-  never use system `sans-serif-light`, which Samsung's font setting replaces.
+  look acceptable without blur. Fonts are bundled Roboto v2.137 (`assets/fonts/`); never use system `sans-serif-light`,
+  which Samsung's font setting replaces. Another weight comes from `google/fonts` commit `724bf98e` (`apache/roboto/`),
+  the release of the bundled ones (same glyphs, only `cmap` / `name` differ).
 * Draw Classic by slot id (`getMetric(id)`), never by iterating `getMetrics()`: injected `VEHICLE_STATUS` then cannot
   show, and a PID missing from the registry leaves its slot at rest instead of shifting the others.
 * ObdMetrics priorities apply only with `pref.adapter.batch.enabled`; header switches are not grouped per ECU, and each
@@ -499,7 +500,6 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
   the ticks and numerals orange. Draw order is the mockup script's.
 * Staleness: only boost and the starter-generator are fast (10 s). `mode01.json` reads coolant and IAT at priority 2
   (every 16th cycle), which a 10 s limit greys out, so every other slot uses 60 s.
-* `Roboto-Light.ttf` is not bundled yet (download pending); `ClassicDrawer` falls back to `sans-serif-light`.
 * `Fps` is a class, not an interface: a `Proxy` stub cannot stand in for it in tests.
 * Profile loader: only `-?\d+` values become `Int`, so headers like `7E0` / `6F1` stay strings unquoted; ECU addresses
   such as `12` / `612` still need quotes.

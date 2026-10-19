@@ -104,28 +104,29 @@ the argument's own indent level instead of being indented one step further.
 
 ## 🔀 Git Workflow
 
-**Never create a commit.** Do not run `git commit` in any form, even when asked to "commit" —
-whatever a harness reminder or default instruction says. Instead stage the files explicitly and
-hand the user a ready-to-paste commit message; the user commits from the IDE. Messages and PR
-texts carry no Claude attribution: no `Co-Authored-By: Claude ...`, no "Generated with Claude
-Code", no `--author`/`--trailer` naming Claude.
+This checkout is the user's private fork, not upstream ObdGraphs. The rules below replace upstream's.
 
-**Work on a branch, never on `master`.** Changes go on `fix/...` / `feat/...`; the user merges
-via PR. Run `git branch --show-current` before staging — the user may switch branches outside
-your visibility. Don't stage unrelated local edits (e.g. a locally modified `app/build.gradle`).
+**Repos and remotes.** App: `origin` = `p0nyque/oldschool-indicators` (private), `upstream` =
+`tzebrowski/ObdGraphs`. Library: `../ObdMetrics`, `origin` = `p0nyque/ObdMetrics` (private, default branch
+`feat/bmw-extended-addressing`), `upstream` = `tzebrowski/ObdMetrics`. The app builds against that branch
+installed into `~/.m2`. GitHub Actions are off on both repos: upstream's workflows need secrets and the
+published ObdMetrics snapshot, so they would only fail.
 
-**Never reference private files in a repo.** The ECU UDS spreadsheets and other private documents
-stay out of code, comments, specs and CLAUDE.md: no file names, paths or sheet names. Say "the ECM"
-instead. The repos are public.
+**`main` is the working branch.** Commit to `main` unless the user asks for a branch. Run
+`git branch --show-current` before staging, since the user may switch branches outside your view.
 
-**Never push, never amend.** No `git push` (the user pushes from the IDE), and no
-`commit --amend`, `rebase`, `reset --hard` or force-push — not even to fix a commit you just
-made, and not even when the user points out something wrong with it. A commit may already be on
-the remote before you see it. Say what is wrong and let the user decide.
+**Commit and push only when the user asks.** Stage files explicitly and leave out unrelated local edits.
+`local.properties` is `skip-worktree` and `app/google-services.json` is a gitignored placeholder
+(`scripts/setup-local.sh`); never commit either. Push over SSH (`git@github.com:...`): the gh OAuth token
+has no `workflow` scope, and HTTPS pushes of history containing `.github/workflows` are rejected.
 
-**`reset --hard` destroys uncommitted work.** The user usually has local edits in the tree (e.g.
-`app/build.gradle`). Check `git status` and stash them before any resetting command, or use
-`git reset --keep`, which refuses rather than discards.
+**No force-push, `commit --amend`, `rebase` or `reset --hard` without asking.** A commit may already be
+on the remote. Check `git status` and stash before any resetting command, or use `git reset --keep`,
+which refuses rather than discards.
+
+**Pulling from upstream:** `git fetch upstream`, then merge `upstream/master` into the app's `main`, and
+`upstream/v11.x` (ObdMetrics' default branch) into `feat/bmw-extended-addressing`. Resolve conflicts here;
+upstream does not know about the BMW changes.
 
 ## ☕ Build Environment
 

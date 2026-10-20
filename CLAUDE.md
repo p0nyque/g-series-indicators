@@ -106,15 +106,20 @@ the argument's own indent level instead of being indented one step further.
 
 ## 🔀 Git Workflow
 
-This checkout is the user's private fork, not upstream ObdGraphs. The rules below replace upstream's.
+This checkout is the user's own fork, not upstream ObdGraphs. The rules below replace upstream's.
 
-**Repos and remotes.** App: `origin` = `p0nyque/g-series-indicators` (private; was `oldschool-indicators`), `upstream` =
-`tzebrowski/ObdGraphs`. Library: `../ObdMetrics`, `origin` = `p0nyque/ObdMetrics` (private, default branch
+**Repos and remotes.** App: `origin` = `p0nyque/g-series-indicators` (public; was `oldschool-indicators`), `upstream` =
+`tzebrowski/ObdGraphs`. Library: `../ObdMetrics`, `origin` = `p0nyque/ObdMetrics` (public, default branch
 `feat/bmw-extended-addressing`), `upstream` = `tzebrowski/ObdMetrics`. The APK (`archivesBaseName` `GSeriesIndicators`)
 and launcher label (`app_name`, "G-Series Indicators") carry the new name. The applicationIds stay `org.obd.graphs.my.giulia*`
 by the user's choice: a new id installs as a separate app, without the old one's settings, profiles or DTC history. The app builds against that branch
 installed into `~/.m2`. GitHub Actions are off on both repos: upstream's workflows need secrets and the
 published ObdMetrics snapshot, so they would only fail.
+
+**READMEs describe the fork, not upstream.** The app's `README.md` has a Status table (what runs on mock data vs. on
+the car): update it when a phase lands or a DID is confirmed. ObdMetrics' `README.md` is a fork section ("What this
+fork adds") above upstream's untouched library docs; add each new fork change to its table, and expect README
+conflicts when merging upstream.
 
 **`main` is the working branch.** Commit to `main` unless the user asks for a branch. Run
 `git branch --show-current` before staging, since the user may switch branches outside your view.

@@ -17,31 +17,14 @@
 package org.obd.graphs.preferences.pid
 
 import android.content.Context
-import android.graphics.Typeface
 import android.util.AttributeSet
 import androidx.preference.DialogPreference
-import org.obd.graphs.R
-import org.obd.graphs.bl.datalogger.dataLoggerSettings
-import org.obd.graphs.ui.common.COLOR_CARDINAL
-import org.obd.graphs.ui.common.colorize
 
 class PidDefinitionListPreferences(
     context: Context,
     private val attrs: AttributeSet?
 ) : DialogPreference(context, attrs) {
     val source = getAttribute("source")
-
-    override fun isEnabled(): Boolean =
-        !(dataLoggerSettings.instance().adapter.individualQueryStrategyEnabled && (source == "high" || source == "low"))
-
-    override fun getSummary(): CharSequence? =
-        if (isEnabled) {
-            super.getSummary()
-        } else {
-            context
-                .getString(R.string.pref_adapter_query_view_individual_dialog_disabled_warning)
-                .colorize(COLOR_CARDINAL, Typeface.NORMAL, 1.0f)
-        }
 
     private fun getAttribute(attrName: String): String =
         if (attrs == null) {

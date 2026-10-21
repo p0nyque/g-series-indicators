@@ -32,7 +32,6 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -89,7 +88,7 @@ open class PidDefinitionDialogFragment(
         val adapter = PidDefinitionViewAdapter(
             context = context,
             data = emptyList(),
-            editModeEnabled = dialogMode.isInteractive,
+            editModeEnabled = dialogMode.isEdit,
             onEditClicked = { clickedPid -> showEditBottomSheet(clickedPid) },
             onDeleteClicked = { clickedPid -> viewModel.delete(clickedPid) },
             onCategoryToggled = { category, checked -> viewModel.setCategoryChecked(category, checked) }
@@ -364,7 +363,7 @@ open class PidDefinitionDialogFragment(
     }
 
     private fun adjustRecyclerViewHeight(recyclerView: RecyclerView, orientation: Int) {
-        recyclerView.layoutParams.height = if (dialogMode.isInteractive) {
+        recyclerView.layoutParams.height = if (dialogMode.isEdit) {
             if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, getScreenHeight() * 0.2f, resources.displayMetrics).toInt()
             } else {
@@ -420,13 +419,8 @@ open class PidDefinitionDialogFragment(
 
     private fun attachActionButtons() {
         val btnSave = root.findViewById<Button>(R.id.pid_list_save)
-        btnSave.visibility = if (dialogMode.isInteractive) View.GONE else View.VISIBLE
+        btnSave.visibility = if (dialogMode.isEdit) View.GONE else View.VISIBLE
         btnSave.setOnClickListener {
-            val overflow = viewModel.gaugeOverflow()
-            if (overflow > 0) {
-                val message = getString(R.string.pref_aa_performance_bottom_pids_overflow, overflow)
-                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-            }
             viewModel.persistSelection()
         }
 
@@ -436,16 +430,13 @@ open class PidDefinitionDialogFragment(
         }
 
         val btnSelectAll = root.findViewById<Button>(R.id.pid_list_select_all)
-        btnSelectAll.visibility = if (dialogMode.isInteractive) View.GONE else View.VISIBLE
+        btnSelectAll.visibility = if (dialogMode.isEdit) View.GONE else View.VISIBLE
         btnSelectAll.setOnClickListener {
-            if (dialogMode.warnsOnSelectAll) {
-                Toast.makeText(requireContext(), R.string.pref_pid_select_all_warning, Toast.LENGTH_LONG).show()
-            }
             viewModel.toggleSelectAll(true)
         }
 
         val btnDeselectAll = root.findViewById<Button>(R.id.pid_list_deselect_all)
-        btnDeselectAll.visibility = if (dialogMode.isInteractive) View.GONE else View.VISIBLE
+        btnDeselectAll.visibility = if (dialogMode.isEdit) View.GONE else View.VISIBLE
         btnDeselectAll.setOnClickListener {
             viewModel.toggleSelectAll(false)
         }

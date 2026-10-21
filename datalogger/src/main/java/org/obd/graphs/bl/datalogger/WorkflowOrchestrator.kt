@@ -23,22 +23,7 @@ import android.util.Log
 import androidx.lifecycle.LifecycleOwner
 import org.obd.graphs.*
 import org.obd.graphs.bl.datalogger.connectors.ConnectionManager
-import org.obd.graphs.bl.datalogger.dtc.DtcActionQueue
-import org.obd.graphs.bl.datalogger.dtc.DtcRequest
-import org.obd.graphs.bl.datalogger.dtc.DtcScanKind
-import org.obd.graphs.bl.datalogger.dtc.EngineStateTracker
-import org.obd.graphs.bl.datalogger.dtc.connectScanScreenLock
-import org.obd.graphs.bl.datalogger.dtc.dtcClearOutcome
-import org.obd.graphs.bl.datalogger.dtc.dtcConnectScanModules
-import org.obd.graphs.bl.datalogger.dtc.PREF_DTC_OBD_MODULES
-import org.obd.graphs.bl.datalogger.dtc.dtcScanHeaders
-import org.obd.graphs.bl.datalogger.dtc.toScanProgress
 import org.obd.graphs.bl.query.Query
-import org.obd.graphs.bl.readiness.PREF_READINESS_LAST
-import org.obd.graphs.bl.readiness.resetsReadiness
-import org.obd.graphs.preferences.Prefs
-import org.obd.graphs.preferences.updateString
-import org.obd.graphs.bl.trip.tripManager
 import org.obd.graphs.profile.PROFILE_CHANGED_EVENT
 import org.obd.metrics.api.CANNetworkRegistry
 import org.obd.metrics.api.DefaultCanNetworkRegistry
@@ -47,28 +32,18 @@ import org.obd.metrics.api.WorkflowExecutionStatus
 import org.obd.metrics.api.model.*
 import org.obd.metrics.codec.formula.FormulaEvaluatorConfig
 import org.obd.metrics.command.Command
-import org.obd.metrics.command.dtc.DiagnosticTroubleCodeClearStatus
-import org.obd.metrics.command.dtc.DtcModuleStatus
-import org.obd.metrics.command.dtc.DtcProgress
 import org.obd.metrics.command.group.CommandGroup
 import org.obd.metrics.command.group.DefaultCommandGroup
-import org.obd.metrics.command.routine.RoutineCommand
-import org.obd.metrics.command.routine.RoutineExecutionStatus
 import org.obd.metrics.diagnostic.Diagnostics
 import org.obd.metrics.diagnostic.Histogram
 import org.obd.metrics.diagnostic.Rate
 import org.obd.metrics.diagnostic.RateType
-import org.obd.metrics.pid.PIDsGroup
-import org.obd.metrics.pid.PidDefinition
 import org.obd.metrics.pid.PidDefinitionRegistry
 import org.obd.metrics.pid.Urls
-import org.obd.metrics.pid.ValueType
 import org.obd.metrics.translation.TranslationProvider
 import java.util.*
 
 const val JS_ENGINE_NAME = "rhino"
-
-private const val CONNECT_SCAN_START_TIMEOUT_MS = 10_000L
 
 /**
  * That's the wrapper interface on Workflow API.
@@ -89,7 +64,7 @@ internal class WorkflowOrchestrator internal constructor() {
     }
 
     internal val eventsReceiver = EventsReceiver()
-    private val metricsObserver = MetricsObserver().apply { observe(EngineStateTracker) }
+    private val metricsObserver = MetricsObserver()
 
     private var lifecycle = object : Lifecycle {
 
@@ -101,74 +76,6 @@ internal class WorkflowOrchestrator internal constructor() {
             status = WorkflowStatus.Connecting
 
             sendBroadcastEvent(DATA_LOGGER_CONNECTING_EVENT)
-        }
-
-        // Called on ObdMetrics' command thread as each module's requests start: only a broadcast here. The phone
-        // overlay and the AA loading title show it.
-        override fun onDTCProgress(progress: DtcProgress) {
-            sendBroadcastEvent(DATA_LOGGER_DTC_PROGRESS, progress.toScanProgress())
-        }
-
-        // moduleStatus: how each scanned module answered (ObdMetrics); a module that did not answer is shown as such
-        // instead of as clean, and is left out of the history comparison. vin: the reply to the VIN request that
-        // opens the action, null when none answered.
-        override fun onDTCCompleted(
-            dtc: Set<DiagnosticTroubleCode>,
-            status: DiagnosticTroubleCodeClearStatus?,
-            moduleStatus: Map<String, DtcModuleStatus>?,
-            vin: String?
-        ) {
-            if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
-                Log.d(LOG_TAG, "Received onDTCCompleted event.")
-            }
-
-            // The completion belongs to the request in flight (one at a time, see DtcActionQueue); null
-            // for one nobody asked for, stored as a plain read like before.
-            val (finished, next) = dtcActions.complete()
-            val kind = finished?.kind ?: DtcScanKind.READ
-            Log.i(LOG_TAG, "DTC action completed: $kind, codes=${dtc.size}, next=${next?.kind}, modules=$moduleStatus, vin=$vin")
-            VehicleCapabilitiesManager.updateDTC(
-                dtc,
-                finished?.moduleLabels.orEmpty(),
-                kind = kind,
-                moduleStatus = moduleStatus.orEmpty(),
-                vin = vin
-            )
-
-            if (kind == DtcScanKind.CONNECT && dtc.isNotEmpty()) sendBroadcastEvent(DATA_LOGGER_DTC_AVAILABLE)
-            // The connect scan's overlay; a request waiting behind it keeps its own.
-            if (kind == DtcScanKind.CONNECT && next == null) sendBroadcastEvent(SCREEN_UNLOCK_PROGRESS_EVENT)
-
-            when {
-                // A request waited for this one: the screen that asked for it keeps waiting for its result.
-                // Sent off ObdMetrics' callback thread, which is the DTC handler finishing this action.
-                next != null -> runAsync(wait = false) { send(next) }
-                // A clear is always followed by a read, so dtc are the codes left after it.
-                kind == DtcScanKind.CLEAR -> {
-                    val outcome = dtcClearOutcome(status, dtc)
-                    Log.i(LOG_TAG, "DTC clear completed. Status=$status, codes left=${dtc.size}, outcome=$outcome")
-                    if (outcome.resetsReadiness()) Prefs.updateString(PREF_READINESS_LAST, null)
-                    sendBroadcastEvent(DATA_LOGGER_DTC_ACTION_COMPLETED, outcome)
-                }
-                else -> sendBroadcastEvent(DATA_LOGGER_DTC_ACTION_COMPLETED)
-            }
-        }
-
-        override fun onRoutineCompleted(
-            routineCommand: RoutineCommand,
-            status: RoutineExecutionStatus
-        ) {
-            if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
-                Log.d(LOG_TAG, "Received onRoutineCompleted event. Routine: ${routineCommand.pid.description}  execution status: $status")
-            }
-
-            val event = when (status) {
-                RoutineExecutionStatus.ERROR -> ROUTINE_EXECUTION_FAILED_EVENT
-                RoutineExecutionStatus.NO_DATA -> ROUTINE_EXECUTION_NO_DATA_RECEIVED_EVENT
-                RoutineExecutionStatus.SUCCESS -> ROUTINE_EXECUTED_SUCCESSFULLY_EVENT
-            }
-
-            sendBroadcastEvent(event)
         }
 
         override fun onModuleDiscovered(
@@ -192,23 +99,8 @@ internal class WorkflowOrchestrator internal constructor() {
 
             sendBroadcastEvent(SCREEN_UNLOCK_PROGRESS_EVENT)
             status = WorkflowStatus.Connected
-            dtcActions.reset()
-            val connectScanModules =
-                if (dataLoggerSettings.instance().adapter.dtcEnabled) {
-                    dtcConnectScanModules(
-                        DiagnosticRequestIDManager.getMappings(),
-                        Prefs.getStringSet(PREF_DTC_OBD_MODULES, emptySet()).orEmpty()
-                    )
-                } else {
-                    emptySet()
-                }
-            VehicleCapabilitiesManager.updateCapabilities(vehicleCapabilities, moduleScanOnConnect = connectScanModules.isNotEmpty())
+            VehicleCapabilitiesManager.updateCapabilities(vehicleCapabilities)
             sendBroadcastEvent(DATA_LOGGER_CONNECTED_EVENT)
-            tripManager.startNewTrip(System.currentTimeMillis())
-
-            if (connectScanModules.isNotEmpty()) {
-                scheduleConnectScan(connectScanModules)
-            }
         }
 
         override fun onError(msg: String, tr: Throwable?) {
@@ -222,7 +114,6 @@ internal class WorkflowOrchestrator internal constructor() {
 
         override fun onStopped() {
             sendBroadcastEvent(SCREEN_UNLOCK_PROGRESS_EVENT)
-            dtcActions.reset()
 
             status = WorkflowStatus.Disconnected
 
@@ -231,13 +122,11 @@ internal class WorkflowOrchestrator internal constructor() {
                 "Collecting process is completed."
             )
             sendBroadcastEvent(DATA_LOGGER_STOPPED_EVENT)
-            tripManager.saveCurrentTrip()
         }
     }
 
     private val workflow: Workflow = workflow().apply {
         applySavedOverrides(this.pidRegistry)
-        registerGPSPids(this.pidRegistry)
     }
 
     private var status = WorkflowStatus.Disconnected
@@ -316,109 +205,9 @@ internal class WorkflowOrchestrator internal constructor() {
         }
     }
 
-    // selectedModules restricts the scan to the given Diagnostic Request ID entry names (their
-    // requestKey, eg. "ABS") - empty means the plain default single-ECU scan, no module targeting.
-    // DTC actions run one at a time: ObdMetrics cancels a running one when another is scheduled.
-    private val dtcActions = DtcActionQueue()
-
-    // ObdMetrics counts the workflow as running only once all its threads are up, which is after
-    // onRunning returns - scheduling from inside the callback would be refused as NOT_RUNNING.
-    private fun scheduleConnectScan(modules: Set<String>) {
-        runAsync(wait = false) {
-            val deadline = System.currentTimeMillis() + CONNECT_SCAN_START_TIMEOUT_MS
-            while (!workflow.isRunning && System.currentTimeMillis() < deadline) {
-                Thread.sleep(50)
-            }
-            if (workflow.isRunning) {
-                Log.i(LOG_TAG, "Scheduling DTC read on connect for all modules: $modules")
-                scheduleDTCRead(modules, connectScan = true)
-            } else {
-                Log.w(LOG_TAG, "Workflow did not start in time, skipping DTC read on connect")
-            }
-        }
-    }
-
-    fun scheduleDTCCleanup(selectedModules: Set<String> = emptySet()) =
-        submit(DtcRequest(DtcScanKind.CLEAR, getDtcModules(selectedModules)))
-
-    fun scheduleDTCRead(
-        selectedModules: Set<String> = emptySet(),
-        connectScan: Boolean = false
-    ) = submit(DtcRequest(if (connectScan) DtcScanKind.CONNECT else DtcScanKind.READ, getDtcModules(selectedModules)))
-
-    private fun submit(request: DtcRequest) {
-        if (dtcActions.submit(request)) {
-            send(request)
-        } else {
-            Log.i(LOG_TAG, "DTC action ${request.kind} waits for the one in flight")
-        }
-    }
-
-    private fun send(request: DtcRequest) {
-        val readAction = getReadDtcAction()
-        val actions = if (request.kind == DtcScanKind.CLEAR) setOf(DtcAction.CLEAR, readAction) else setOf(readAction)
-        Log.i(LOG_TAG, "Schedule DTC ${request.kind}. Read action=$readAction, modules=${request.modules}")
-        val result = workflow.scheduleDTCAction(actions, request.modules)
-        Log.i(LOG_TAG, "DTC ${request.kind} is scheduled: $result")
-        // Refused (e.g. not connected): no completion will come, so nothing is in flight.
-        if (result != WorkflowExecutionStatus.DTC_QUEUED) {
-            dtcActions.reset()
-        } else if (request.kind == DtcScanKind.CONNECT) {
-            // Live data stops while ObdMetrics runs the scan: tell the driver why the gauges freeze. Same overlay
-            // as a manual read (context DTC_SCREEN_LOCK_CONTEXT), so the module counter shows on it too.
-            sendBroadcastEvent(SCREEN_LOCK_PROGRESS_EVENT, connectScanScreenLock(request.modules.size))
-        }
-    }
-
-    // Reuses the Diagnostic Request ID table as the DTC scan target list, restricted to whichever
-    // entries the user picked for this scan (selection is by requestKey, the internal ID). The
-    // module's displayName (description, falling back to requestKey) is what ends up on
-    // Init.Header.mode - not a protocol mode, but the label shown in the DTC list/dialogs.
-    private fun getDtcModules(selectedModules: Set<String>): List<Init.Header> =
-        dtcScanHeaders(
-            DiagnosticRequestIDManager.getMappings(),
-            selectedModules,
-            Prefs.getStringSet(PREF_DTC_OBD_MODULES, emptySet()).orEmpty()
-        )
-
     fun discoverModule(header: String) {
         val result = workflow.discoverModule(header)
         Log.i(LOG_TAG, "Module discovery for header=$header scheduled: $result")
-    }
-
-    // Runs off the caller's thread for the same reason start() does: DataLoggerService dispatches
-    // this from onStartCommand, i.e. on the MAIN thread, and executeRoutine opens the transport -
-    // AdapterConnection.connect() blocks for as long as the adapter takes to answer.
-    fun executeRoutine(query: Query) {
-        runAsync (wait=false) {
-            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
-            currentQuery = query
-            val init = init()
-            val dataLoggerQuery = org.obd.metrics.api.model.Query.builder().pids(query.getIDs()).build()
-            val adjustments = adjustmentsStrategy.findAdjustmentFor(query.getStrategy())
-
-            ConnectionManager.obtain(pidDefinitionRegistry(), dataLoggerQuery, adjustments, init)?.run {
-                Log.i(
-                    LOG_TAG,
-                    "Executing routine. Strategy: ${query.getStrategy()}. Selected PIDs: ${dataLoggerQuery.pids}"
-                )
-
-                val status = workflow.executeRoutine(dataLoggerQuery.pids.first(), init)
-                Log.i(
-                    LOG_TAG,
-                    "Routines has been completed. Strategy: ${query.getStrategy()}. Status=$status"
-                )
-
-                when (status) {
-                    WorkflowExecutionStatus.REJECTED -> sendBroadcastEvent(ROUTINE_REJECTED_EVENT)
-                    WorkflowExecutionStatus.NOT_RUNNING -> sendBroadcastEvent(
-                        ROUTINE_WORKFLOW_NOT_RUNNING_EVENT
-                    )
-
-                    else -> sendBroadcastEvent(ROUTINE_UNKNOWN_STATUS_EVENT)
-                }
-            }
-        }
     }
 
     private lateinit var currentQuery: Query
@@ -451,8 +240,6 @@ internal class WorkflowOrchestrator internal constructor() {
 
     fun isSameQuery(query: Query) =
         ::currentQuery.isInitialized && query.getIDs() == currentQuery.getIDs()
-
-    fun isDTCEnabled(): Boolean = workflow.pidRegistry.findBy(PIDsGroup.DTC_READ).isNotEmpty()
 
     private fun init(preferences: DataLoggerSettings = dataLoggerSettings.instance()) : Init {
         val init  = Init.builder()
@@ -533,7 +320,6 @@ internal class WorkflowOrchestrator internal constructor() {
         )
 
         applySavedOverrides(workflow.pidRegistry)
-        registerGPSPids(workflow.pidRegistry)
     }
 
     private fun updateModulesRegistry() = runAsync {
@@ -542,25 +328,6 @@ internal class WorkflowOrchestrator internal constructor() {
         )
 
         applySavedOverrides(workflow.pidRegistry)
-        registerGPSPids(workflow.pidRegistry)
-    }
-
-    private fun registerGPSPids(pidRegistry: PidDefinitionRegistry) {
-        Log.d(LOG_TAG, "Registering GPS PIDs")
-        pidRegistry.register(
-            PidDefinition(
-                Pid.GPS_LOCATION_PID_ID.id,
-                2,
-                "",
-                "22",
-                "Alt",
-                "m",
-                "GPS",
-                -180,
-                10000,
-                ValueType.DOUBLE
-            )
-        )
     }
 
     private fun applySavedOverrides(pidRegistry: PidDefinitionRegistry) {
@@ -587,8 +354,6 @@ internal class WorkflowOrchestrator internal constructor() {
             }
         }
     }
-
-    private fun getReadDtcAction(): DtcAction  = if (dataLoggerSettings.instance().adapter.dtcReadSnapshots) DtcAction.READ_SNAPSHPOTS else DtcAction.READ
 
     private fun pids(): Pids? {
         val resourceUrls = dataLoggerSettings.instance().resources.map {

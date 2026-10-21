@@ -26,8 +26,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.obd.graphs.DiagnosticMappingItem
-import org.obd.graphs.DiagnosticRequestIDManager
 import org.obd.graphs.bl.TestSetup
 import org.obd.graphs.bl.query.QueryStrategyType
 import org.obd.metrics.pid.PIDsGroup
@@ -53,12 +51,10 @@ class AdjustmentsStrategyTest : TestSetup() {
 
     private fun preferences(
         stnEnabled: Boolean = false,
-        metadataReadingEnabled: Boolean = true,
-        dtcEnabled: Boolean = true
+        metadataReadingEnabled: Boolean = true
     ) =
         DataLoggerSettings(
             debugLogging = true,
-            dragRacingCommandFrequency = 25,
             fuelTankSize = 70,
             dumpRawConnectorResponse = true,
             adapter =
@@ -78,8 +74,6 @@ class AdjustmentsStrategyTest : TestSetup() {
                 connectionType = "bluetooth",
                 vehicleMetadataReadingEnabled = metadataReadingEnabled,
                 vehicleCapabilitiesReadingEnabled = true,
-                dtcEnabled = dtcEnabled,
-                dtcAutoCleanup = true,
                 resultsCacheEnabled = true
             )
         )
@@ -89,7 +83,7 @@ class AdjustmentsStrategyTest : TestSetup() {
         val preferences = preferences()
         every { dataLoggerSettings.instance() } returns preferences
 
-        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.SHARED_QUERY, preferences)
+        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.CLASSIC_QUERY, preferences)
 
         assertTrue(adjustments.isDebugEnabled)
         assertEquals(3, adjustments.errorsPolicy.numberOfRetries)
@@ -104,84 +98,19 @@ class AdjustmentsStrategyTest : TestSetup() {
         assertEquals(15L, adjustments.adaptiveTimeoutPolicy.commandFrequency)
         assertTrue(adjustments.requestedGroups.contains(PIDsGroup.METADATA))
         assertTrue(adjustments.requestedGroups.contains(PIDsGroup.CAPABILITES))
-        assertTrue(adjustments.requestedGroups.contains(PIDsGroup.DTC_READ))
-        assertTrue(adjustments.requestedGroups.contains(PIDsGroup.DTC_CLEAR))
+        assertFalse(adjustments.requestedGroups.contains(PIDsGroup.DTC_READ))
+        assertFalse(adjustments.requestedGroups.contains(PIDsGroup.DTC_CLEAR))
     }
 
     @Test
-    fun `DTC reading reads the VIN alone when metadata reading is off`() {
-        val preferences = preferences(metadataReadingEnabled = false, dtcEnabled = true)
+    fun `no metadata and no DTC are read with metadata reading off`() {
+        val preferences = preferences(metadataReadingEnabled = false)
         every { dataLoggerSettings.instance() } returns preferences
 
-        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.SHARED_QUERY, preferences)
-
-        assertFalse(adjustments.requestedGroups.contains(PIDsGroup.METADATA))
-        assertTrue(adjustments.isVehicleMetadataVinReadingEnabled)
-    }
-
-    @Test
-    fun `no metadata is read with metadata reading and DTC reading off`() {
-        val preferences = preferences(metadataReadingEnabled = false, dtcEnabled = false)
-        every { dataLoggerSettings.instance() } returns preferences
-
-        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.SHARED_QUERY, preferences)
+        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.CLASSIC_QUERY, preferences)
 
         assertFalse(adjustments.requestedGroups.contains(PIDsGroup.METADATA))
         assertFalse(adjustments.isVehicleMetadataVinReadingEnabled)
-    }
-
-    @Test
-    fun `drag racing adjustments disable vehicle metadata and capabilities reading`() {
-        val preferences = preferences()
-        every { dataLoggerSettings.instance() } returns preferences
-
-        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.DRAG_RACING_QUERY, preferences)
-
-        assertTrue(adjustments.isDebugEnabled)
-        assertEquals(25L, adjustments.adaptiveTimeoutPolicy.commandFrequency)
-        assertFalse(adjustments.isCollectRawConnectorResponseEnabled)
-        assertTrue(adjustments.requestedGroups.isEmpty())
-        assertFalse(adjustments.cachePolicy.isResultCacheEnabled)
-    }
-
-    @Test
-    fun `drag racing adjustments add priority overrides when stn extensions are enabled`() {
-        val preferences = preferences(stnEnabled = true)
-        every { dataLoggerSettings.instance() } returns preferences
-
-        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.DRAG_RACING_QUERY, preferences)
-
-        assertTrue(adjustments.overrides.containsKey(Pid.ATM_PRESSURE_PID_ID.id))
-        assertTrue(adjustments.overrides.containsKey(Pid.AMBIENT_TEMP_PID_ID.id))
-        assertTrue(adjustments.overrides.containsKey(Pid.DYNAMIC_SELECTOR_PID_ID.id))
-        assertTrue(adjustments.overrides.containsKey(Pid.ENGINE_TORQUE_PID_ID.id))
-    }
-
-    @Test
-    fun `drag racing adjustments do not add overrides when stn extensions are disabled`() {
-        val preferences = preferences(stnEnabled = false)
-        every { dataLoggerSettings.instance() } returns preferences
-
-        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.DRAG_RACING_QUERY, preferences)
-
-        assertTrue(adjustments.overrides.isEmpty())
-    }
-
-    // ObdMetrics' read on connect covers the default header only: with modules configured it left
-    // untagged codes that replaced the grouped list and leaked into the next scan, so the app scans
-    // the modules itself after connecting.
-    @Test
-    fun `read on connect is left to the module scan when modules are configured`() {
-        val preferences = preferences()
-        every { dataLoggerSettings.instance() } returns preferences
-        mockkObject(DiagnosticRequestIDManager)
-        every { DiagnosticRequestIDManager.getMappings() } returns
-            listOf(DiagnosticMappingItem(1, "22", "DA10F1", "Engine ECU"))
-
-        val adjustments = strategy.findAdjustmentFor(QueryStrategyType.SHARED_QUERY, preferences)
-
         assertFalse(adjustments.requestedGroups.contains(PIDsGroup.DTC_READ))
-        // The automatic clear is a separate setting and stays as it was.
-        assertTrue(adjustments.requestedGroups.contains(PIDsGroup.DTC_CLEAR))
     }
 }

@@ -30,23 +30,14 @@ import org.obd.graphs.bl.datalogger.PidDefinitionSerializerTest
 import org.obd.graphs.bl.datalogger.VehicleCapabilitiesManagerTest
 import org.obd.graphs.bl.datalogger.connectors.ConnectionManagerTest
 import org.obd.graphs.bl.extra.VehicleStatusMetricsProcessorTest
-import org.obd.graphs.bl.gps.GpsMetricsEmitterTest
-import org.obd.graphs.bl.query.DragRacingQueryStrategyTest
-import org.obd.graphs.bl.query.IndividualQueryStrategyTest
-import org.obd.graphs.bl.query.PerformanceQueryStrategyTest
+import org.obd.graphs.bl.query.ClassicPidsTest
+import org.obd.graphs.bl.query.ClassicQueryStrategyTest
 import org.obd.graphs.bl.query.QueryStrategyOrchestratorTest
 import org.obd.graphs.bl.query.QueryStrategyTest
-import org.obd.graphs.bl.query.SharedQueryStrategyTest
-import org.obd.graphs.bl.query.TripInfoQueryStrategyTest
-import org.obd.graphs.bl.trip.FileTripRepositoryTest
-import org.obd.graphs.bl.trip.TripDescParserTest
-import org.obd.graphs.bl.trip.TripModelSerializerTest
-import org.obd.graphs.bl.trip.TripVirtualScreenManagerTest
 
 @RunWith(Suite::class)
 @SuiteClasses(
     DataLoggerServiceTest::class,
-    GpsMetricsEmitterTest::class,
     InMemoryCarMetricsCollectorTest::class,
     MetricTest::class,
     MetricsBuilderTest::class,
@@ -58,16 +49,9 @@ import org.obd.graphs.bl.trip.TripVirtualScreenManagerTest
     VehicleCapabilitiesManagerTest::class,
     ConnectionManagerTest::class,
     VehicleStatusMetricsProcessorTest::class,
-    DragRacingQueryStrategyTest::class,
-    IndividualQueryStrategyTest::class,
-    PerformanceQueryStrategyTest::class,
+    ClassicPidsTest::class,
+    ClassicQueryStrategyTest::class,
     QueryStrategyOrchestratorTest::class,
-    QueryStrategyTest::class,
-    SharedQueryStrategyTest::class,
-    TripInfoQueryStrategyTest::class,
-    FileTripRepositoryTest::class,
-    TripDescParserTest::class,
-    TripModelSerializerTest::class,
-    TripVirtualScreenManagerTest::class
+    QueryStrategyTest::class
 )
 class DataLoggerTestSuite

@@ -16,8 +16,6 @@
  */
 package org.obd.graphs.bl.datalogger
 
-import org.obd.graphs.DiagnosticRequestIDManager
-import org.obd.graphs.bl.datalogger.dtc.dtcScanModules
 import org.obd.graphs.bl.query.QueryStrategyType
 import org.obd.graphs.getContext
 import org.obd.metrics.api.model.AdaptiveTimeoutPolicy
@@ -33,86 +31,11 @@ import org.obd.metrics.api.model.SniffingPolicy
 import java.io.File
 
 internal class AdjustmentsStrategy {
+    // Every query (there is one, the Classic screen's) runs with the same policies.
     fun findAdjustmentFor(
-        strategy: QueryStrategyType,
+        @Suppress("UNUSED_PARAMETER") strategy: QueryStrategyType,
         preferences: DataLoggerSettings = dataLoggerSettings.instance()
-    ): Adjustments =
-        when (strategy) {
-            QueryStrategyType.DRAG_RACING_QUERY -> getDragRacingAdjustments(preferences = preferences)
-            else -> getDefaultAdjustments(preferences = preferences)
-        }
-
-    private fun getDragRacingAdjustments(preferences: DataLoggerSettings): Adjustments {
-        var builder =
-            Adjustments
-                .builder()
-                .sniffing(SniffingPolicy.builder().enabled(false).build())
-                .debugEnabled(preferences.debugLogging)
-                .errorsPolicy(
-                    ErrorsPolicy
-                        .builder()
-                        .numberOfRetries(preferences.adapter.maxReconnectNum)
-                        .reconnectEnabled(preferences.adapter.reconnectWhenError)
-                        .build()
-                ).batchPolicy(
-                    BatchPolicy
-                        .builder()
-                        .enabled(preferences.adapter.batchEnabled)
-                        .calculateResponseFrames(preferences.adapter.calculateResponseFrames)
-                        .mode01BatchSize(preferences.adapter.mode01BatchSize)
-                        .otherModesBatchSize(preferences.adapter.otherModesBatchSize)
-                        .build()
-                ).collectRawConnectorResponseEnabled(false)
-                .stNxx(
-                    STNxxExtensions
-                        .builder()
-                        .enabled(dataLoggerSettings.instance().adapter.stnExtensionsEnabled)
-                        .promoteSlowGroupsEnabled(false)
-                        .promoteAllGroupsEnabled(false)
-                        .build()
-                ).vehicleMetadataReadingEnabled(false)
-                .vehicleCapabilitiesReadingEnabled(false)
-                .vehicleDtcReadingEnabled(false)
-                .vehicleDtcCleaningEnabled(false)
-                .cachePolicy(
-                    CachePolicy
-                        .builder()
-                        .resultCacheEnabled(false)
-                        .build()
-                ).producerPolicy(
-                    ProducerPolicy
-                        .builder()
-                        .pidPriority(0, 0) // vehicle speed, rpm
-                        .pidPriority(5, 10) // atm pressure, ambient temp
-                        .pidPriority(4, 4) // atm pressure, ambient temp
-                        .conditionalSleepEnabled(false)
-                        .build()
-                ).adaptiveTimeoutPolicy(
-                    AdaptiveTimeoutPolicy
-                        .builder()
-                        .enabled(preferences.adapter.adaptiveConnectionEnabled)
-                        .checkInterval(5000)
-                        .commandFrequency(preferences.dragRacingCommandFrequency)
-                        .minimumTimeout(10)
-                        .build()
-                )
-
-        if (dataLoggerSettings.instance().adapter.stnExtensionsEnabled) {
-            val highPriorityOverridePolicy =
-                PidDefinitionCustomization.builder().priority(0).build()
-            builder =
-                builder
-                    .override(Pid.ATM_PRESSURE_PID_ID.id, highPriorityOverridePolicy)
-                    .override(Pid.AMBIENT_TEMP_PID_ID.id, highPriorityOverridePolicy)
-                    .override(Pid.DYNAMIC_SELECTOR_PID_ID.id, highPriorityOverridePolicy)
-                    .override(
-                        Pid.ENGINE_TORQUE_PID_ID.id,
-                        PidDefinitionCustomization.builder().priority(4).build()
-                    )
-        }
-
-        return builder.build()
-    }
+    ): Adjustments = getDefaultAdjustments(preferences = preferences)
 
     private fun getDefaultAdjustments(preferences: DataLoggerSettings) =
         Adjustments
@@ -153,16 +76,11 @@ internal class AdjustmentsStrategy {
                     .enabled(preferences.adapter.stnExtensionsEnabled)
                     .build()
             ).vehicleMetadataReadingEnabled(preferences.adapter.vehicleMetadataReadingEnabled)
-            // DTC reads are stamped and kept per vehicle by VIN; with metadata reading off the init still
-            // reads the VIN alone (one request), so a change of car is seen on every connect.
-            .vehicleMetadataVinReadingEnabled(preferences.adapter.dtcEnabled)
+            .vehicleMetadataVinReadingEnabled(false)
             .vehicleCapabilitiesReadingEnabled(preferences.adapter.vehicleCapabilitiesReadingEnabled)
-            // With modules configured, the read on connect is a module scan scheduled by
-            // WorkflowOrchestrator.onRunning; ObdMetrics' own read covers the default header only and
-            // left untagged codes behind (replacing the grouped list, leaking into the next scan).
-            .vehicleDtcReadingEnabled(
-                preferences.adapter.dtcEnabled && dtcScanModules(DiagnosticRequestIDManager.getMappings(), emptySet()).isEmpty()
-            ).vehicleDtcCleaningEnabled(preferences.adapter.dtcAutoCleanup)
+            // No DTC handling in this app: nothing is read or cleared on connect.
+            .vehicleDtcReadingEnabled(false)
+            .vehicleDtcCleaningEnabled(false)
             .cachePolicy(
                 CachePolicy
                     .builder()

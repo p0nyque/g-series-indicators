@@ -38,14 +38,10 @@ import org.obd.graphs.bl.query.Query
 import org.obd.graphs.commons.R
 import org.obd.graphs.sendBroadcastEvent
 
-private const val ACTION_DTC_CLEANUP = "org.obd.graphs.logger.DTC.cleanup"
-private const val ACTION_DTC_READ = "org.obd.graphs.logger.DTC.read"
-private const val DTC_SELECTED_MODULES = "org.obd.graphs.logger.DTC.selected_modules"
 private const val ACTION_START = "org.obd.graphs.logger.START"
 private const val ACTION_STOP = "org.obd.graphs.logger.STOP"
 private const val UPDATE_QUERY = "org.obd.graphs.logger.UPDATE_QUERY"
 private const val QUERY = "org.obd.graphs.logger.QUERY"
-private const val EXECUTE_ROUTINE = "org.obd.graphs.logger.EXECUTE_ROUTINE"
 private const val ACTION_MODULE_DISCOVERY = "org.obd.graphs.logger.MODULE_DISCOVERY"
 private const val MODULE_DISCOVERY_HEADER = "org.obd.graphs.logger.MODULE_DISCOVERY.header"
 
@@ -100,21 +96,6 @@ class DataLoggerService : Service() {
                 query?.let { DataLoggerRepository.workflowOrchestrator.start(it) }
             }
 
-            ACTION_DTC_CLEANUP -> {
-                val selectedModules = intent.getStringArrayListExtra(DTC_SELECTED_MODULES)?.toSet() ?: emptySet()
-                DataLoggerRepository.workflowOrchestrator.scheduleDTCCleanup(selectedModules)
-            }
-
-            ACTION_DTC_READ -> {
-                val selectedModules = intent.getStringArrayListExtra(DTC_SELECTED_MODULES)?.toSet() ?: emptySet()
-                DataLoggerRepository.workflowOrchestrator.scheduleDTCRead(selectedModules)
-            }
-
-            EXECUTE_ROUTINE -> {
-                val query = intent.extras?.get(QUERY) as? Query
-                query?.let { DataLoggerRepository.workflowOrchestrator.executeRoutine(it) }
-            }
-
             ACTION_MODULE_DISCOVERY -> {
                 intent.getStringExtra(MODULE_DISCOVERY_HEADER)?.let {
                     DataLoggerRepository.workflowOrchestrator.discoverModule(it)
@@ -152,21 +133,9 @@ class DataLoggerService : Service() {
         }
     }
 
-    fun executeRoutine(query: Query) {
-        enqueueWork(EXECUTE_ROUTINE) { it.putExtra(QUERY, query) }
-    }
-
     fun start(query: Query) {
         attemptScreenLock()
         enqueueWork(ACTION_START) { it.putExtra(QUERY, query) }
-    }
-
-    fun scheduleDTCCleanup(selectedModules: Set<String> = emptySet()) {
-        enqueueWork(ACTION_DTC_CLEANUP) { it.putStringArrayListExtra(DTC_SELECTED_MODULES, ArrayList(selectedModules)) }
-    }
-
-    fun scheduleDTCRead(selectedModules: Set<String> = emptySet()) {
-        enqueueWork(ACTION_DTC_READ) { it.putStringArrayListExtra(DTC_SELECTED_MODULES, ArrayList(selectedModules)) }
     }
 
     fun discoverModule(header: String) {

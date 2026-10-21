@@ -15,13 +15,7 @@
  * limitations under the License.
  */
 package org.obd.graphs.bl.query
+
 enum class QueryStrategyType {
-    ROUTINES_QUERY,
-    DRAG_RACING_QUERY,
-    TRIP_INFO_QUERY,
-    SHARED_QUERY,
-    INDIVIDUAL_QUERY,
-    PERFORMANCE_QUERY,
-    READINESS_QUERY,
     CLASSIC_QUERY
 }

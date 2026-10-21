@@ -18,16 +18,19 @@ package org.obd.graphs.bl.query
 
 interface Query : java.io.Serializable {
     fun getDefaultPIDs(): Set<Long>
+
     fun getIDs(): MutableSet<Long>
+
     fun getStrategy(): QueryStrategyType
+
     fun setStrategy(queryStrategyType: QueryStrategyType): Query
+
     fun update(newPIDs: Set<Long>): Query
-    fun filterBy(filter: String): Set<Long>
-    fun apply(filter: String): Query
-    fun apply(filter: Set<Long>): Query
+
     companion object {
-        fun instance(queryStrategyType: QueryStrategyType = QueryStrategyType.SHARED_QUERY): Query = QueryStrategyOrchestrator().apply {
-            setStrategy(queryStrategyType)
-        }
+        fun instance(queryStrategyType: QueryStrategyType = QueryStrategyType.CLASSIC_QUERY): Query =
+            QueryStrategyOrchestrator().apply {
+                setStrategy(queryStrategyType)
+            }
     }
 }

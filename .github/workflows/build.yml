@@ -68,7 +68,7 @@ jobs:
           disable-animations: true
           script: |
             if [ "${{ env.HAS_SECRETS }}" == "true" ]; then
-              sh ./gradlew connectedGiuliaDebugAndroidTest
+              sh ./gradlew connectedGiuliaAADebugAndroidTest
             else
               sh ./gradlew connectedDebugAndroidTest
             fi
@@ -82,8 +82,8 @@ jobs:
           ANDROID_RELEASE_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
         run: |
           # 4g + stacktrace: packageGiuliaRelease failed with a cause-less IncrementalSplitterRunnable error
-          sh ./gradlew app:bundleGiulia app:bundleGiuliaAA --stacktrace "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
-          sh ./gradlew app:assembleGiulia app:assembleGiuliaAA --stacktrace "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
+          sh ./gradlew app:bundleGiuliaAA --stacktrace "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
+          sh ./gradlew app:assembleGiuliaAA --stacktrace "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

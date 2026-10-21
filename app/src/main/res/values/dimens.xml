@@ -1,8 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="readiness_row_padding">6dp</dimen>
-    <dimen name="readiness_row_icon_padding">10dp</dimen>
-    <dimen name="readiness_dialog_side_inset">16dp</dimen>
-    <dimen name="dtc_mini_badge_gap">4dp</dimen>
-    <dimen name="dtc_module_clean_icon">20dp</dimen>
 </resources>

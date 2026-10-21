@@ -4,6 +4,9 @@ An Android Auto dashboard for the BMW G31 LCI 520d MHEV (B47 diesel, 48 V mild h
 through an ELM327-type OBD adapter and draws its own gauges on the car screen, styled after the G31 LCI's Live Cockpit
 cluster. It is meant to replace BimmerLink's dashboard while driving.
 
+The app is deliberately small: the phone side is a settings screen (adapter connection, CAN header table, PID
+registry, vehicle profile, a connect button), and the car side is the Classic dashboard and nothing else.
+
 It is a fork of [tzebrowski/ObdGraphs](https://github.com/tzebrowski/ObdGraphs) and runs on a fork of its OBD library,
 [p0nyque/ObdMetrics](https://github.com/p0nyque/ObdMetrics), which adds BMW CAN extended addressing.
 
@@ -16,7 +19,8 @@ It is a fork of [tzebrowski/ObdGraphs](https://github.com/tzebrowski/ObdGraphs) 
 | Classic dashboard (Android Auto) | Implemented and rendered in tests, on mock data. Not yet run on a head unit. |
 | BMW profile and PID file | Written. The DIDs come from BMW's ECU descriptions and are **not yet confirmed on the car**. |
 | BMW extended addressing (`6F1` + ECU byte) | In the ObdMetrics fork, unit-tested, not yet tried on the car. |
-| Everything inherited from ObdGraphs | Works as upstream: Gauge, Giulia, Trip Info, Performance and Drag Racing screens, DTC read / clear, readiness monitors, trip logs. |
+| Phone app | Settings only (connection, adapter init, PIDs, profile) with a connect button. Checked on the emulator with the mock connection. |
+| Upstream ObdGraphs features | Removed on purpose (2026-10-21): Gauge / Giulia / Trip Info / Performance / Drag Racing screens, DTC, readiness, trips, Google Drive, the setup wizard. See `doc/specs/simplified-app.md`. |
 
 Next step is a car spike: check that the vLinker accepts the extended-addressing AT commands and that one DDE value
 decodes. See phases in [the tech design](doc/specs/classic-dashboard-tech.md#5-phases).
@@ -66,8 +70,7 @@ including the Android Auto Desktop Head Unit: [SETUP.md](SETUP.md).
    cd ../ObdMetrics && JAVA_HOME=$HOME/Library/Android/jdk/jdk-11.0.32.1+1/Contents/Home mvn install -Dlombok.delombok.skip=true
    ```
 
-2. Prepare this checkout once. It points `local.properties` at your SDK and writes a placeholder
-   `app/google-services.json`, so no crash data goes to upstream's Firebase project:
+2. Prepare this checkout once. It points `local.properties` at your SDK:
 
    ```bash
    ./scripts/setup-local.sh
@@ -88,19 +91,21 @@ AA cannot be installed side by side.
 
 ## Use
 
-1. In the phone app, select the profile **BMW G31 520d MHEV (BT,AA)** and pick the vLinker as the Bluetooth adapter.
-2. In Android Auto, open G-Series Indicators and choose **Classic** from the screen list.
+1. In the phone app the profile **BMW G31 520d MHEV (BT,AA)** is selected by default; pick the vLinker as the
+   Bluetooth adapter under *Connection*. The round button connects to the adapter, to check the settings without the car.
+2. In Android Auto, open G-Series Indicators: the Classic dashboard is the only screen. Its strip has connect /
+   disconnect and exit.
 3. Without the car: in a debug build set the connection type to **mock**. It answers every PID, so every dial moves.
 
 ## Repository layout
 
 | Path | What is there |
 |---|---|
-| `app` | Phone UI, settings, PID dialogs |
-| `automotive` | Android Auto screens; the BMW profile is `src/main/assets/bmw_g31_520d_mhev.properties` |
-| `screen_renderer` | Canvas drawing for every screen; the Classic dashboard is `renderer/classic/` |
-| `datalogger` | Adapter connections, queries, DTC logic; BMW PIDs in `src/main/resources/bmw_b47_mhev.json` |
-| `profile`, `common`, `dragracing`, `screen_behavior`, `integrations` | Upstream modules, unchanged in purpose |
+| `app` | Phone settings activity, PID and CAN header dialogs |
+| `automotive` | The Android Auto session and its single Classic screen; the BMW profile is `src/main/assets/bmw_g31_520d_mhev.properties` |
+| `screen_renderer` | The Classic dashboard drawer, `renderer/classic/` |
+| `datalogger` | Adapter connections, the Classic query, the metrics collector; BMW PIDs in `src/main/resources/bmw_b47_mhev.json` |
+| `profile`, `common` | Upstream modules, trimmed |
 | `doc/specs` | One spec per feature, with mockups and renders in `img/` |
 | `scripts` | `setup-local.sh`, the BMW PID generator `gen_bmw_pids.py`, mockup generators |
 
@@ -112,6 +117,10 @@ AA cannot be installed side by side.
 
 ```bash
 ./gradlew :datalogger:testDebugUnitTest
+```
+
+```bash
+./gradlew :profile:testDebugUnitTest :app:testGiuliaAADebugUnitTest
 ```
 
 ```bash

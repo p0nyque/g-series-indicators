@@ -32,16 +32,22 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
     lint {
         disable 'KtxExtensionAvailable', 'GradleDependency', 'ViewConstructor', 'IconLauncherShape'
     }
     namespace "org.obd.graphs.aa"
+    // ClassicCarScreenTest builds the car template under Robolectric with the Car App testing library.
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -49,8 +55,6 @@ dependencies {
     implementation project(":common")
     implementation project(':profile')
     implementation project(":datalogger")
-    implementation project(":dragracing")
-    implementation project(":screen_behavior")
 
     implementation "androidx.car.app:app:1.4.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -72,4 +76,9 @@ dependencies {
     implementation 'com.github.kizitonwose.colorpreference:core:1.1.0'
     implementation 'com.github.kizitonwose.colorpreference:support:1.1.0'
     debugImplementation 'com.github.DonaldDu:FixUnhandledEvent:1.0'
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.robolectric:robolectric:4.11.1"
+    testImplementation "io.mockk:mockk:1.13.8"
+    testImplementation "androidx.car.app:app-testing:1.4.0"
+    testImplementation "androidx.test:core:1.5.0"
 }

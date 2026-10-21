@@ -43,12 +43,7 @@ internal class VehicleStatusMetricsProcessor : MetricsProcessor {
     private var currentVehicleDecelerating = false
 
     override fun postValue(obdMetric: ObdMetric) {
-        if ((
-                dataLoggerSettings.instance().vehicleStatusPanelEnabled ||
-                    dataLoggerSettings.instance().vehicleStatusDisconnectWhenOff
-                ) &&
-            obdMetric.isVehicleStatus()
-        ) {
+        if (dataLoggerSettings.instance().vehicleStatusDisconnectWhenOff && obdMetric.isVehicleStatus()) {
             if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
                 Log.v(LOG_TAG, "Received vehicle status=${obdMetric.value}, ")
             }

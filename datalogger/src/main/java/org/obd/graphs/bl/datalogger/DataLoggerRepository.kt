@@ -51,7 +51,6 @@ object DataLoggerRepository {
     fun findHistogramFor(metric: ObdMetric): Histogram = workflowOrchestrator.findHistogramFor(metric)
     fun findRateFor(metric: ObdMetric): Optional<Rate> = workflowOrchestrator.findRateFor(metric)
     fun getPidDefinitionRegistry(): PidDefinitionRegistry = workflowOrchestrator.pidDefinitionRegistry()
-    fun isDTCEnabled(): Boolean = workflowOrchestrator.isDTCEnabled()
     fun runningQuery(): Query? = workflowOrchestrator.runningQuery()
     fun updateTranslations(locale: String) = workflowOrchestrator.updateTranslations(locale)
     fun status(): WorkflowStatus = workflowOrchestrator.status()

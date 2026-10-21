@@ -53,7 +53,7 @@ internal class ProfileServiceTest : TestSetup() {
         val profiles = profileService.getAvailableProfiles()
 
         // Assert
-        assertEquals(20, profiles.size)
+        assertEquals(25, profiles.size)
         assertEquals("User Profile 1", profiles["profile_1"])
         assertEquals("Profile 2", profiles["profile_2"])
     }

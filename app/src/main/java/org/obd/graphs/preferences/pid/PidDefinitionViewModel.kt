@@ -30,26 +30,9 @@ import org.obd.graphs.MODULES_LIST_CHANGED_EVENT
 import org.obd.graphs.ViewPreferencesSerializer
 import org.obd.graphs.bl.datalogger.DataLoggerRepository
 import org.obd.graphs.bl.datalogger.VehicleCapabilitiesManager
-import org.obd.graphs.bl.datalogger.dataLoggerSettings
 import org.obd.graphs.bl.datalogger.isUserCustom
 import org.obd.graphs.bl.datalogger.serialize
-import org.obd.graphs.bl.query.PREF_QUERY_PERFORMANCE_BOTTOM
-import org.obd.graphs.bl.query.PREF_QUERY_PERFORMANCE_BOTTOM_SELECTED
-import org.obd.graphs.bl.query.PREF_QUERY_PERFORMANCE_HIDDEN
-import org.obd.graphs.bl.query.PREF_QUERY_PERFORMANCE_SELECTED
-import org.obd.graphs.bl.query.PREF_QUERY_TRIP_INFO_SELECTED
-import org.obd.graphs.bl.query.Query
-import org.obd.graphs.bl.query.QueryStrategyType
-import org.obd.graphs.bl.query.performanceBottomDialogItems
-import org.obd.graphs.bl.query.performanceBottomDialogSelection
-import org.obd.graphs.bl.query.performanceGaugeOverflow
-import org.obd.graphs.bl.query.prunedPerformanceBottomSelection
-import org.obd.graphs.bl.query.tripInfoBottomDialogItems
-import org.obd.graphs.bl.query.tripInfoBottomDialogSelection
-import org.obd.graphs.bl.readiness.isReadinessPid
 import org.obd.graphs.preferences.Prefs
-import org.obd.graphs.preferences.getLongList
-import org.obd.graphs.preferences.getLongSet
 import org.obd.graphs.preferences.getStringSet
 import org.obd.graphs.preferences.updateStringSet
 import org.obd.graphs.sendBroadcastEvent
@@ -59,8 +42,6 @@ import java.util.Locale
 
 private const val FILTER_BY_ECU_SUPPORTED_PIDS_PREF = "pref.pids.registry.filter_pids_ecu_supported"
 private const val FILTER_BY_STABLE_PIDS_PREF = "pref.pids.registry.filter_pids_stable"
-private const val HIGH_PRIO_PID_PREF = "pref.pids.generic.high"
-private const val LOW_PRIO_PID_PREF = "pref.pids.generic.low"
 private const val LOG_TAG = "PidViewModel"
 
 data class PidDefinitionDetails(
@@ -205,41 +186,14 @@ class PidDefinitionViewModel(
                 Log.i(LOG_TAG, "Persisting PID list for key=$key, new list=$newList")
                 sendBroadcastEvent("$key.event.changed")
                 Prefs.updateStringSet(key, newList)
-                if (dialogMode is PidDefinitionDialogMode.Performance) {
-                    pruneGaugeSelection(newList.map { it.toLong() }.toSet())
-                }
             } else {
                 Log.i(LOG_TAG, "Do not persist PID list for key=$key, it did not change")
             }
         }
     }
 
-    // Checked PIDs the gauge row has no room for; they are drawn in the grid instead.
-    fun gaugeOverflow(): Int =
-        if (dialogMode is PidDefinitionDialogMode.PerformanceBottom) performanceGaugeOverflow(allMasterItems.count { it.checked }) else 0
-
-    private fun pruneGaugeSelection(selected: Set<Long>) {
-        val stored =
-            if (Prefs.contains(PREF_QUERY_PERFORMANCE_BOTTOM_SELECTED)) {
-                Prefs.getStringSet(PREF_QUERY_PERFORMANCE_BOTTOM_SELECTED).map { it.toLong() }.toSet()
-            } else {
-                null
-            }
-        prunedPerformanceBottomSelection(stored, selected)?.let { pruned ->
-            Log.i(LOG_TAG, "Dropping deselected PIDs from the gauges, new list=$pruned")
-            Prefs.updateStringSet(PREF_QUERY_PERFORMANCE_BOTTOM_SELECTED, pruned.map { it.toString() })
-        }
-    }
-
-    // The bottom row dialogs list only the PIDs selected for their screen; see tripInfoBottomDialogSelection.
-    private fun persistedSelection(listed: Collection<Long>): Collection<Long> =
-        when (dialogMode) {
-            is PidDefinitionDialogMode.TripInfoBottom -> tripInfoBottomDialogSelection(storedOrNull(), listed)
-            is PidDefinitionDialogMode.PerformanceBottom -> performanceBottomDialogSelection(storedOrNull(), listed)
-            else -> Prefs.getStringSet(key).map { s -> s.toLong() }
-        }
-
-    private fun storedOrNull(): Set<Long>? = if (Prefs.contains(key)) Prefs.getStringSet(key).map { s -> s.toLong() }.toSet() else null
+    private fun persistedSelection(@Suppress("UNUSED_PARAMETER") listed: Collection<Long>): Collection<Long> =
+        Prefs.getStringSet(key).map { s -> s.toLong() }
 
     fun reorderItems(items: List<PidDefinitionDetails>) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -281,59 +235,7 @@ class PidDefinitionViewModel(
     }
 
     private fun sourceList(): MutableList<PidDefinitionDetails> {
-        val all = DataLoggerRepository.getPidDefinitionRegistry().findAll()
-        val individualQuery = dataLoggerSettings.instance().adapter.individualQueryStrategyEnabled
-        val pidRegistry = DataLoggerRepository.getPidDefinitionRegistry()
-        val sourceList: List<PidDefinitionDetails> = when {
-            dialogMode is PidDefinitionDialogMode.TripInfo -> {
-                // The defaults and the current selection bypass the registry filters: a selected PID
-                // missing from the list would be dropped from the selection on save.
-                val pinned = (
-                    Query.instance(QueryStrategyType.TRIP_INFO_QUERY).getDefaultPIDs() +
-                        Prefs.getStringSet(key).map { s -> s.toLong() }
-                    ).mapNotNull { pidRegistry.findBy(it) }
-                    .map { PidDefinitionDetails(it, checked = false, supported = true) }
-                val pinnedIds = pinned.map { it.source.id }.toSet()
-                pinned + findPidDefinitionByPriority(all) { !pinnedIds.contains(it.id) }
-            }
-            dialogMode is PidDefinitionDialogMode.TripInfoBottom -> {
-                tripInfoBottomDialogItems(Prefs.getStringSet(PREF_QUERY_TRIP_INFO_SELECTED).map { it.toLong() })
-                    .mapNotNull { pidRegistry.findBy(it) }
-                    .map { PidDefinitionDetails(it, checked = false, supported = true) }
-            }
-            dialogMode is PidDefinitionDialogMode.Performance -> {
-                // Same as Trip Info: the profile's PIDs and the current selection bypass the registry filters.
-                val pinned = (
-                    Query.instance(QueryStrategyType.PERFORMANCE_QUERY).getDefaultPIDs() +
-                        Prefs.getStringSet(key).map { s -> s.toLong() }
-                    ).mapNotNull { pidRegistry.findBy(it) }
-                    .map { PidDefinitionDetails(it, checked = false, supported = true) }
-                val pinnedIds = pinned.map { it.source.id }.toSet()
-                pinned + findPidDefinitionByPriority(all) { !pinnedIds.contains(it.id) }
-            }
-            dialogMode is PidDefinitionDialogMode.PerformanceBottom -> {
-                performanceBottomDialogItems(
-                    Prefs.getStringSet(PREF_QUERY_PERFORMANCE_SELECTED).map { it.toLong() },
-                    Prefs.getLongSet(PREF_QUERY_PERFORMANCE_HIDDEN),
-                    Prefs.getLongList(PREF_QUERY_PERFORMANCE_BOTTOM)
-                ).mapNotNull { pidRegistry.findBy(it) }
-                    .map { PidDefinitionDetails(it, checked = false, supported = true) }
-            }
-            individualQuery -> {
-                findPidDefinitionByPriority(pidRegistry.findAll()) { true }
-            }
-            else -> {
-                when (dialogMode) {
-                    is PidDefinitionDialogMode.LowPriority -> findPidDefinitionByPriority(all) { it.priority > 0 }
-                    is PidDefinitionDialogMode.HighPriority -> findPidDefinitionByPriority(all) { it.priority == 0 }
-                    is PidDefinitionDialogMode.Dashboard, is PidDefinitionDialogMode.Graph,
-                    is PidDefinitionDialogMode.Gauge, is PidDefinitionDialogMode.Giulia,
-                    is PidDefinitionDialogMode.AA -> map(all)
-                    else -> findPidDefinitionByPriority(pidRegistry.findAll()) { true }
-                }
-            }
-        }
-
+        val sourceList = findPidDefinitionByPriority(DataLoggerRepository.getPidDefinitionRegistry().findAll()) { true }
         val pref = persistedSelection(sourceList.map { it.source.id })
         sourceList.forEach { p ->
             if (pref.contains(p.source.id)) {
@@ -382,12 +284,6 @@ class PidDefinitionViewModel(
 
     private fun viewPreferencesSerializer(): ViewPreferencesSerializer = ViewPreferencesSerializer(orderPrefKey ?: "$key.view.settings")
 
-    private fun map(all: MutableCollection<PidDefinition>): List<PidDefinitionDetails> {
-        val source = Prefs.getStringSet(HIGH_PRIO_PID_PREF).map { s -> s.toLong() } +
-            Prefs.getStringSet(LOW_PRIO_PID_PREF).map { s -> s.toLong() }
-        return findPidDefinitionByPriority(all.filter { source.contains(it.id) }) { true }
-    }
-
     private fun findPidDefinitionByPriority(
         source: Collection<PidDefinition>,
         predicate: (PidDefinition) -> Boolean
@@ -399,7 +295,6 @@ class PidDefinitionViewModel(
         return source
             .asSequence()
             .filter { p -> p.group == PIDsGroup.LIVEDATA }
-            .filter { p -> !p.isReadinessPid() }
             .filter { p -> if (!stablePIDsEnabled) p.stable!! else true }
             .filter { p -> predicate.invoke(p) }
             .map { p -> PidDefinitionDetails(source = p, supported = isSupported(ecuSupportedPIDs, p)) }

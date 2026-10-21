@@ -37,10 +37,10 @@ lesson. Update or delete entries that turn out to be wrong.
 * **Run Tests for a Specific Flavor:** e.g., `./gradlew connectedGiuliaAADebugAndroidTest`
 
 ### Build Variants & Target Flavors
-The application uses the `version` flavor dimension. Combine the flavor and the build type (e.g., `giuliaAADebug`, `giuliaRelease`, etc.).
-* **Giulia Android Auto:** `./gradlew assembleGiuliaAADebug`
-* **Giulia Performance Monitor:** `./gradlew assembleGiuliaPerformanceMonitorDebug`
-* **Standard Giulia:** `./gradlew assembleGiuliaDebug`
+One flavor is left, `giuliaAA` (dimension `version`); combine it with the build type.
+* **Debug APK:** `./gradlew :app:assembleGiuliaAADebug`
+* **Unit tests of the app module:** `./gradlew :app:testGiuliaAADebugUnitTest`
+* **Lint (errors fail CI):** `./gradlew :app:lintGiuliaAADebug`
 
 ---
 
@@ -59,13 +59,15 @@ When writing new tests, use the natively provided libraries within the `androidT
 * **Kotlin Extensions:** AndroidX Core KTX (v1.5.0) and JUnit KTX (v1.1.5)
 
 > **Note on Unit Tests:** `:app` has a plain JUnit suite for Android-free logic (e.g.
-> `PidDefinitionDialogModeTest`, `./gradlew :app:testGiuliaDebugUnitTest`). `:datalogger` does have a local JVM suite under `src/test` running on
-> Robolectric (`./gradlew :datalogger:testDebugUnitTest`). `:screen_renderer` has plain JUnit
+> `PidDefinitionDialogModeTest`, `./gradlew :app:testGiuliaAADebugUnitTest`). `:datalogger` has a local JVM suite under `src/test` running on
+> Robolectric (`./gradlew :datalogger:testDebugUnitTest`, suite `DataLoggerTestSuite` lists the classes). `:screen_renderer` has plain JUnit
 > tests for pure layout logic (`./gradlew :screen_renderer:testDebugUnitTest`) — keep Canvas-free
-> logic in testable functions such as `TripInfoMetrics` — plus `ClassicRenderTest`, which draws a
+> logic in testable functions such as `ClassicLayout` / `ClassicReadings` — plus `ClassicRenderTest`, which draws a
 > whole screen on a real canvas (Robolectric `@GraphicsMode(NATIVE)`, `@Config(sdk = [34])`) into
-> PNGs under `screen_renderer/build/classic-render/`: the way to look at a screen without a DHU. Other modules define only
-> `androidTestImplementation`, so a new local suite there needs `testImplementation` added first.
+> PNGs under `screen_renderer/build/classic-render/`: the way to look at a screen without a DHU. `:profile` has its own
+> Robolectric suite. `:automotive` has `ClassicCarScreenTest` (`androidx.car.app:app-testing` `TestCarContext` +
+> Robolectric; `DataLoggerRepository` / `AutoConnect` mocked with mockk, which needs the module on JVM target 11).
+> `:app` has no instrumented tests any more (the old ones drove the removed screens).
 
 **Every new feature ships with a spec** in `doc/specs/<feature>.md`, staged with the change — not
 done until it exists. Follow the existing specs' structure: Summary (problem, scope), Behaviour
@@ -83,15 +85,16 @@ must reproduce the bug: check that it fails against the unfixed code, otherwise 
 ## 🏗 Codebase Architecture
 
 ### Internal Submodules / Projects
-This app depends heavily on a modularized local architecture:
-* `:common` - Shared utilities and models.
-* `:datalogger` - Interface and implementation for OBD adapter data collection.
-* `:dragracing` - Specific module handling timing, acceleration, and racing metrics.
-* `:profile` - User configuration and OBD profile persistence.
-* `:screen_renderer` - Canvas or custom drawing routines for real-time visualization.
-* `:screen_behavior` - Navigation, UI states, and interaction behavior.
-* `:integrations` - Interfaces to external ecosystems.
-* `:automotive` - Custom automotive extensions (e.g., Android Auto support, included in debug/release builds).
+Four library modules plus the app (spec `doc/specs/simplified-app.md`, 2026-10-21):
+* `:common` - Prefs, broadcasts, permissions, `Network`, `DiagnosticRequestIDManager`, `Modules`, notifications.
+* `:profile` - vehicle profile persistence (`assets/*.properties` → Prefs).
+* `:datalogger` - ObdMetrics workflow, adapter connections, the Classic query, the metrics collector; BMW PIDs in
+  `src/main/resources/bmw_b47_mhev.json`.
+* `:screen_renderer` - the Classic dashboard drawer (`renderer/classic/`) and the `SurfaceRenderer` interface.
+* `:automotive` - the Android Auto session and its single screen (`ClassicCarScreen`); the BMW profile asset.
+* `:app` - the phone settings activity, connection / PID / CAN-header preferences.
+`:dragracing`, `:integrations`, `:screen_behavior` and `:ext` were deleted with the upstream screens; do not resurrect
+them for a new feature, add to the modules above.
 
 ### Static Code Quality
 This project uses Spotless for automatic code style enforcement. Ensure you format before submitting PRs:
@@ -125,8 +128,7 @@ conflicts when merging upstream.
 `git branch --show-current` before staging, since the user may switch branches outside your view.
 
 **Commit and push only when the user asks.** Stage files explicitly and leave out unrelated local edits.
-`local.properties` is `skip-worktree` and `app/google-services.json` is a gitignored placeholder
-(`scripts/setup-local.sh`); never commit either. Push over SSH (`git@github.com:...`): the gh OAuth token
+`local.properties` is `skip-worktree` (`scripts/setup-local.sh` writes it); never commit it. Push over SSH (`git@github.com:...`): the gh OAuth token
 has no `workflow` scope, and HTTPS pushes of history containing `.github/workflows` are rejected.
 
 **No force-push, `commit --amend`, `rebase` or `reset --hard` without asking.** A commit may already be
@@ -146,9 +148,12 @@ DHU in `extras/google/auto`. `avdmanager` needs `JAVA_HOME` set (JDK 17 in `~/Li
 `adb shell am start -n org.obd.graphs.my.giulia.aa/org.obd.graphs.activity.MainActivity`; `monkey` silently
 did nothing. The AA screens need Android Auto from Play inside the emulator (the user signs in), then
 Developer settings → Start head unit server, `adb forward tcp:5277 tcp:5277`, `desktop-head-unit`.
-* **App dies at start with "Please set a valid API key" = the `google-services.json` placeholder.** No code calls
-  Firebase, but its auto-init provider validates the key's format (`A` + 38 chars) and crashes on `dummy`.
-  `scripts/setup-local.sh` writes a well-formed fake key and replaces the old `dummy` placeholder.
+**"connected" then "Failed to read from transport" from the DHU = nothing listens on 5277**: the AVD ships only Google's
+Android Auto *stub* (`pm path com.google.android.projection.gearhead` → `AndroidAutoStubPrebuilt`); the real app has to be
+installed from Play and signed in before the head unit server exists. `adb logcat` shows `adbd: failed to connect to
+socket 'tcp:5277'`.
+* Firebase / Crashlytics are gone from the build (2026-10-21): no `google-services.json` is needed any more. An old
+  checkout's placeholder file is harmless and gitignored.
 
 CI "Unresolved reference" to a new ObdMetrics class while it builds locally = stale snapshot, not code.
 Locally `mavenLocal()` serves your own ObdMetrics install; CI restores a Gradle cache (`setup-java`
@@ -160,324 +165,59 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
 
 ## 📚 Findings & Architecture Decisions
 
-### Screen rendering: settings, drawers, renderers (`:screen_renderer`)
-* Each screen = `*SurfaceRenderer` (orchestrates a frame) + `*Drawer` (extends `AbstractDrawer`, does the Canvas work). Drawers read everything through the `ScreenSettings` interface passed to their constructor (`renderer/api/ScreenSettings.kt`).
-* The same `ScreenSettings` implementation serves several screens: on AA it is `CarSettings` (`automotive/.../aa/CarSettings.kt`); on phone each screen has its own (e.g. `app/.../ui/trip_info/TripInfoSettings.kt`). Screen-specific values live in per-screen data classes (`TripInfoScreenSettings`, `GiuliaScreenSettings`, ...) returned by `get*ScreenSettings()`.
-* **Pitfall:** global-looking methods on `ScreenSettings` (e.g. `isBreakLabelTextEnabled()`) are implemented in `CarSettings` with keys scoped to the *current Giulia virtual screen* (`pref.aa.break_label.<id>`). Any other screen that calls them silently inherits Giulia's setting.
-* **Decision (per-screen override pattern):** to give a screen its own value for a shared `ScreenSettings` method, add the field to that screen's data class and wrap the settings in the renderer via delegation:
-  ```kotlin
-  object : ScreenSettings by settings {
-      override fun isBreakLabelTextEnabled() = settings.getTripInfoScreenSettings().breakLabelTextEnabled
-  }
-  ```
-  Pass the wrapper to the drawer; nested drawers created from it (e.g. `TripInfoDrawer`'s internal `GiuliaDrawer`) inherit the override. Prefer this over adding screen-specific branches in `AbstractDrawer`/`GiuliaDrawer`.
 
-### Trip Info screen (AA + phone)
-* Files: `renderer/trip/TripInfoSurfaceRenderer.kt`, `TripInfoDrawer.kt` (layout + `TripInfoLayoutCache`), `TripInfoDetails.kt`; query in `datalogger/.../query/TripInfoQueryStrategy.kt`. There is no class named `TripInfoRenderer`.
-* **What is drawn comes from the queried PIDs, not from fields.** `TripInfoMetrics.plan()` splits
-  `metricsCollector.getMetrics()` into top grid and bottom row; any selected PID is drawn. Per-PID
-  formatting (decimals, units, min/max, odometer `diff`) lives in its `defaultTop` descriptors; other
-  PIDs get generic formatting. The plan is cached in `TripInfoSurfaceRenderer` and rebuilt when the
-  queried ids or the bottom/order prefs change.
-* **Backward compatibility rules (keep them):** the 16 former grid PIDs keep their fixed order ahead
-  of any other PID, so an old stale drag order cannot move them; only extra PIDs follow the dialog
-  order. Ambient temp, atm pressure and dynamic selector are queried for the status panel/theme and
-  never drawn in the grid. The bottom row pref `pref.aa.trip_info.bottom.pids.selected` has **no
-  XML defaultValue**: *unset* means `TRIP_INFO_DEFAULT_BOTTOM_PIDS` (the former row), an *empty set*
-  means no bottom row — a defaultValue would get persisted and wipe the row. The bottom dialog
-  (`trip_info_bottom`) lists only the PIDs selected for Trip Info, so it never changes the query.
-  Its checked state and its save comparison both go through `tripInfoBottomDialogSelection()`
-  (stored/default row ∩ listed PIDs); comparing against the full default instead made an unchanged
-  save persist a shortened row whenever a default bottom PID was not selected.
-* Per-PID formatting must follow the PID into the bottom row: a bottom descriptor without `diff`
-  drew the raw odometer instead of the trip distance. Status PIDs (`TRIP_INFO_STATUS_PIDS`) are
-  excluded from both rows and from the bottom dialog.
-* **Every PID visible in the collector gets drawn, not only the selected ones.** `QueryStrategyOrchestrator.getIDs()`
-  silently adds `VEHICLE_STATUS` to every query when the status panel / disconnect-when-off is on,
-  so it must stay in `TRIP_INFO_STATUS_PIDS`. Any PID injected into queries the same way needs adding there too.
-* The Trip Info PID dialog offers the full registry, but the defaults and the current selection are
-  added unfiltered: a selected PID hidden by the ECU/stable filters would be dropped on save.
-* Top grid: labels drawn by `AbstractDrawer.drawTitle`, 6 columns (`MAX_ITEM_IN_THE_ROW`), row height `1.8 × textSizeBase` — labels have no width clamp, and a 3+ line label would overlap the next row. Above 18 items `TripInfoMetrics.grid()` shrinks text and adds columns within the same 3-row height (min scale 0.75 = 8 × 4 = 32 tiles; past that the last cell is "+N" for the undrawn ones). The floor was 0.5 (72 tiles) until "select all" on an 800 × 480 DHU gave ~4 px labels — readability, not capacity, sets the floor; up to 18 the layout is unchanged. `maxItemWidth` uses `layoutCache.grid.columns`, which is never laid out for Performance (it calls `drawMetric` without `drawScreen`) — so Performance passes its own column width as `drawMetric(maxWidth = …)`; any other reuse of `drawMetric` must too.
-* Bottom row: max 4 (`MAX_BOTTOM_ITEMS`, extras go to the grid), drawn via `GiuliaDrawer.drawMetric`; text size is computed once in `calculateLayout` and cached. Any input that changes label geometry (area, top/bottom metric counts, bottom PID ids, break-label flag) must be part of `TripInfoLayoutCache.requiresLayoutUpdate` — the non-area ones live in the testable `TripInfoLabelLayout`. A count is not enough once PIDs are user-chosen: swapping a bottom PID keeps the count and left the old text size. Label width must be measured the same way it is drawn (split on `\n` only when breaking is enabled).
-* Top-grid min / max are drawn only if `TripInfoMetrics.statsFit` says they fit the column. #222 added
-  a `maxWidth` (column) parameter to `drawValue`, which already had a local `maxWidth` (max text width):
-  the local shadowed it and no top-grid tile (Trip Info and Performance) showed min / max. Kotlin only
-  warns on shadowing — read the compiler warnings when renaming parameters.
-* `TripInfoMetrics.grid()` takes base columns/rows so Performance shares it; `drawHiddenCount` is non-private for the same reason.
-* AA label splitting is controlled by `pref.aa.trip_info.break_label` (default `true`), independent of Giulia virtual screens. Phone Trip Info always splits (`TripInfoSettings`).
 
-### Performance screen (AA + phone)
-* `renderer/performance/PerformanceSurfaceRenderer.kt` wraps settings in the internal `PerformanceScreenSettings` delegate (same name as the `api.PerformanceScreenSettings` data class — mind the imports). Its top grid reuses `TripInfoDrawer.drawMetric`; gauges use the gauge drawer.
-* AA label splitting is controlled by `pref.aa.performance.break_label` (default `true`) via that delegate. Phone Performance always splits (`PerformanceSettings`).
-* **Draws any selected PID, like Trip Info** (`PerformanceMetrics.plan()`, spec `doc/specs/performance-dynamic-pids.md`).
-  Profile lists `pref.query.performance.top`/`bottom`/`hidden` stay the backward-compatible layout: top
-  PIDs first in their order, other selected PIDs after in dialog order. Gauges come from
-  `pref.aa.performance.bottom.pids.selected` (no XML defaultValue; unset = profile `bottom`, empty = none,
-  max `PERFORMANCE_MAX_GAUGES = 5`). `VEHICLE_STATUS` is excluded via `PERFORMANCE_STATUS_PIDS`.
-  Saving the main Performance selection prunes deselected PIDs from a *stored* gauge set (never
-  creates one), else a gauge came back as a gauge on reselect.
-* `MetricsCache` reads the profile lists from `Prefs` when it rebuilds the plan, not from listener-updated
-  copies: the renderer's listener only flags the plan outdated, and a copy updated by a second listener
-  could be read half-applied. Grid fit reuses `TripInfoMetrics.grid(count, 5, 3)` (unchanged up to 15).
-* A stored gauge / bottom-row selection is a `Set`, so it carries no order. Undragged PIDs fall back to
-  the profile's bottom order (Trip Info: `TRIP_INFO_DEFAULT_BOTTOM_PIDS`) before id order in
-  `bl/query/PidOrder.kt` (`:datalogger`, shared by both screens and their dialogs — keep one copy);
-  plain id order reshuffled the row as soon as one PID was unchecked.
-* **Opening a PID dialog stores a drag order.** `PidDefinitionViewModel.sortItems()` saves the checked
-  rows' listed order whenever none is stored, and a stored order beats `PidOrder`'s default. So the
-  bottom/gauge dialogs must *list* in the default order (`tripInfoBottomDialogItems`,
-  `performanceBottomDialogItems`); listed in a `Set`'s order, merely opening the dialog fixed a random
-  order. Orders stored before that fix stay as stored — they cannot be told apart from a real drag.
-* "Select all" in the Trip Info / Performance PID dialogs (full registry) only warns via toast, by
-  the user's choice — no cap. Gate: `PidDefinitionDialogMode.warnsOnSelectAll`.
-* **Gauges keep their size; the top grid gives way** (user's choice). `PerformanceDrawer` sizes the
-  gauges first (`PerformanceMetrics.gaugeRow`, width / count; `GaugeGeometry.dialBottomRatio` = how far
-  below its top the arc reaches), then `gridRows()` turns the height left into a fractional row budget
-  (1..3) for `TripInfoMetrics.grid(count, 5, rows)`, which shrinks text / adds columns to fit. On an
-  800 × 480 DHU three grid rows plus full-size gauges do not fit. Wrong turn: capping the gauges by
-  the height left under the grid gave ~90 px unreadable dials. That cap now only bites below a 1-row grid.
-  Performance's grid font floor is 0.6 (`PERFORMANCE_MIN_GRID_SCALE`, passed as `grid(minScale)`), not
-  Trip Info's 0.75: at 0.75 the ~1.4 rows left on a DHU held one row of six ("+7" for 12 PIDs).
-* `MetricsCache` serves phone and AA alike, so the AA gauge pref and order keys also drive the phone
-  screen, which has no setting of its own. Gauges past `PERFORMANCE_MAX_GAUGES` fall back into the grid,
-  not nowhere; the gauge dialog only warns (toast), it does not block.
 
-### Gauge drawer (`renderer/gauge/`)
-* `GaugeDrawer` is shared by the Gauge, Performance, Drag Racing and Brake Boosting screens (phone + AA):
-  any dial change shows on all four. Spec: `doc/specs/gauge-drawing-improvements.md`.
-* **The dial maps values through `GaugeScale`, not `pid.min`/`pid.max`.** It extends the PID range to
-  "nice" steps; progress, labels and ticks must all use `scale.fraction()` or they drift apart.
-  Pure geometry lives in `GaugeGeometry.kt` (unit-tested); keep Canvas out of it.
-* The scale bitmap is cached, so anything that decides *what* goes into it (numbers on/off, scale,
-  zones) must be in its key. Numbers skipped for a still-`null` value were cached numberless for good.
-* End labels of a dial that ends below centre sit beside the stats row; `GaugeGeometry.statsMaxWidth`
-  keeps the row clear. Fix overlaps with draw order (numbers after ticks) before moving labels.
-* Phone dials are centred on what they draw (`GaugeGeometry.dialTopOffset` from start/sweep), not on
-  their square — a 200° arc leaves the lower circle empty.
-* Units: draw `displayUnits(pid.units)` (`renderer/Units.kt`), never `pid.units` directly. ObdMetrics'
-  PID resources spell °C as a bare `C`, and they are not ours to change (shared with exports/logs).
-* The red end is **styling, identical on every dial** (`GaugeRedZone`, last quarter), never derived
-  from alert thresholds. Two wrong turns, both rejected by the user: threshold-only zones (#225) left
-  PIDs without alerts with no red; threshold-started zones made the red differ dial to dial. Alerts
-  show only through the value / bar colour. The scale bitmap cache is keyed by `GaugeScale` — a cache
-  keyed by PID id alone kept a stale scale after a PID edit.
-* Phone cards may be taller than the dial (`GaugeGeometry.cardHeight`); `borderArea` is the card, `top`
-  the dial. Captions belong to the card. `contentHeight`'s bottom pad must be excluded from the height
-  the cards share, or a filled grid scrolls by a few pixels.
-* The bar is drawn with `progressPaint` / `glowPaint`, never `paint`: a shader on `paint` (the old
-  progress gradient) is invisible. Spec: `doc/specs/gauge-view-improvements.md`.
-* Per-PID cross-frame state (eased needle, staleness, last draw) lives in `GaugeFrameStates`; every
-  per-PID cache in `GaugeDrawer` must be dropped in `evictUndrawn`, or it leaks for PIDs no longer shown.
-  A new reading = a new `metric.source` object (the collector replaces it), not a changed value.
-* Centre text on `measureText` (advance), not `getTextBounds` (ink): ink width differs per digit, so the
-  value jittered sideways every reading.
-* Grid layout is `GaugeGrid` (pure, pinned by `GaugeGridTest`); change AA tuning there, with a DHU check.
 
-### DTC (phone dialog + AA screen)
-* List logic (grouping by module, sort, code/description formatting, scan module selection) lives in
-  `datalogger/.../bl/datalogger/dtc/DtcListItem.kt`, shared by `DiagnosticTroubleCodePreferenceDialogFragment`
-  and AA `DiagnosticTroubleCodesScreen` — keep one copy. Spec: `doc/specs/aa-dtc-screen.md`.
-* `DtcListItem` declares `abstract equals/hashCode`: lint's `DiffUtilEquals` (an *error*, fails CI
-  `lintGiuliaDebug`) cannot see data-class subclasses in another module. Run `:app:lintGiuliaDebug`
-  after moving a type that an `:app` adapter compares.
-* Row identity is `DtcListItem.itemKey()` (module + display code, no raw hex): used for DiffUtil's
-  `areItemsTheSame` and the phone's expanded row. Code + raw hex merged the same code from two modules,
-  and made a status-byte change look like a new row. Never key list state by position — a read or
-  clear reorders the list and another row inherited the expanded state.
-* Phone dialog buttons: check the PL strings at phone width. Three equal-weight buttons in
-  `dialog_dtc_module_picker.xml` broke "Odznacz wszystkie" mid-word, so select/deselect-all now sits
-  above the list and the bar holds only Cancel + confirm.
-  The picker list's height cap (`MaxHeightListView`, `pickerListMaxHeight`) subtracts the views around it: a fixed 40 %
-  of the screen plus the Clear warning and the UDS / OBD-II hint pushed Cancel / Clear Codes off a phone screen.
-  Any text added to `dialog_dtc_module_picker.xml` is then accounted for; check the Clear flow on a phone anyway.
-* Module order: modules with codes first, then clean ones, each by name (`toDtcListItems`, shared). Headers carry the
-  code count (`ModuleHeader.codeCount`, not part of `itemKey()`). AA templates allow colour spans only in row text
-  lines: section headers and row titles are text-only and throw on a colour span, so AA marks codes with a tinted
-  `CarIcon`. Phone colours come from night-aware resources; hard-coded `Color.DKGRAY` was unreadable on the dark
-  dialog. Spec: `doc/specs/dtc-list-colors-order.md`.
-* Code state (Active / Stored / Pending / History + MIL) is decoded from `statusMask` in `dtc/DtcStatus.kt`,
-  shared by phone, AA, sort and share report. UDS modules send the real status byte; OBD-II codes (03 / 07 / 0A, below)
-  get the bit their service stands for, and permanent is the separate `isPermanent`. `activeStatuses` are translated
-  strings — never parse them, use the mask.
-  Spec: `doc/specs/dtc-status-badges.md`. Phone shows it as chips under the code, each with its own icon + colour
-  (`STATE_BADGES`) and a text explanation when expanded — the user rejected a coloured text line reusing the codes' red.
-  `item_dtc.xml` is a plain top-down stack: description → chips → expanded details → divider (the code sits beside
-  the description and is never taller). Wrong turns: chips under the code alone were wider than its column and
-  overlapped the description; barriers (`bottom` of code + description, and of all columns for the divider) resolved
-  wrongly once a row was expanded, pushing the chips ~850 px down. Space below a view is padding, not margin, if
-  anything ever constrains to a barrier again (barriers ignore margins). Check bounds with
-  `adb shell uiautomator dump`, not by eye.
-* Phone module sections collapse (`collapsedBy`, `withModuleSummaries` in `DtcListItem.kt`): clean modules start
-  collapsed, modules with codes expanded; the header's mini chips (state counts, MIL, new, check when clean) are what a
-  collapsed module shows. Every section header, "no longer reported" included, uses `item_dtc_module_header.xml` and
-  `addMiniBadge` (user wants them alike; a separate banner was rejected). Keep header-only data (`summary`, `expanded`) out of `itemKey()`, or a toggle reads as a new row.
-* The phone DTC dialog has a chip legend (`DTC_LEGEND` in the adapter, toggle under the readiness row). A new chip
-  must be added there too; `DtcLegendTest` fails if a state badge is missing. Legend texts are the `*.explanation`
-  strings with the "Label: " prefix cut, so keep that prefix format in every language.
-  Equal chip widths come from a `TableLayout`, not code: a chip measured before it is attached leaves out its start
-  icon (relative compound drawables resolve on attach), ~70 px short. Wrong turn: anchoring by text replace in
-  `dialog_dtc.xml` re-pointed the wrong view and made a constraint loop (toggle drawn behind the buttons) — check
-  every `toBottomOf` after editing a ConstraintLayout chain.
-* "Timeout waiting for response" on a DTC read/clear is the phone overlay (`ScreenLockManager`), not the car:
-  `ScreenLock.timeoutMs` defaults to 10 s, a 13-module scan takes ~13 s. DTC actions pass `dtcActionTimeoutMs(modules)`;
-  any other long action behind the overlay needs its own timeout too. The logcat shows the scan completing regardless.
-* AA scans the modules the phone's picker left checked (`PREF_DTC_DESELECTED_MODULES`); AA has no picker.
-* **The section a code lands in is `DiagnosticTroubleCode.module`, set inside ObdMetrics, not here.**
-  An "ECU" (now "Unknown module") section full of codes next to scanned modules that report nothing
-  means the module tag was lost upstream: e.g. two DTC read PIDs sharing a query made the decoder use
-  the registry copies (`module=ecu`). Check the `[DTC] Adding DTC read command` lines in logcat
-  before touching the grouping. Fix lives in ObdMetrics `fix/dtc-module-tagging`.
-* CAN header table entries can share a header; `dtcScanTargets` scans each header once (first selected
-  entry names it). Without it the same ECU's codes appear under every name pointing at it.
-* **ObdMetrics reported `NO_DATA` for every user-triggered clear** (only the init clear had a real
-  status, in `VehicleCapabilities`). Fixed upstream on `feat/dtc-clear-status`, but the app judges a
-  clear mainly by the read that follows it (`dtcClearOutcome`): only "refused" needs the real status.
-  The outcome rides on `DATA_LOGGER_DTC_ACTION_COMPLETED` as a `DtcClearOutcome` extra; reads carry none.
-  Spec: `doc/specs/dtc-read-info-clear-outcome.md`.
-* Stored codes are stamped (`pref.datalogger.dtc.read_info`: time + VIN) in `updateDTC`. Vehicle
-  metadata is keyed by the metadata PID's *label*, which varies by profile **and is translated**
-  (Giulia 22F190: "Vehicle Identification Number" / PL "Numer identyfikacyjny pojazdu"). So `vinFrom`
-  looks up the VIN PIDs' labels (`vinLabels`, by category) first, then keys mentioning "vin", then a VIN-shaped value.
-  09 02 and 22 F190 share the label "Vehicle Identification Number", so one reply overwrites the other in the map.
-  The VIN a DTC action read (`onDTCCompleted`) is the current car's (`pref.datalogger.vehicle.vin`, cleared on connect)
-  and wins over the metadata. Rejected by the user: a `vin` field on ObdMetrics' `VehicleCapabilities` (Lifecycle
-  already carries it).
-  No VIN at all usually means `pref.adapter.init.fetchDeviceProperties` is off (metadata `{}`).
-  Check on device: `adb shell "run-as <pkg> cat shared_prefs/<pkg>_preferences.xml"` (debug builds only).
-* **Automatic DTC read on connect = a module scan when modules are configured.** ObdMetrics' own
-  init read (`vehicleDtcReadingEnabled`) covers the default header only. Its untagged result replaced the
-  grouped list on every connect, and its codes leaked into the next scan as "Unknown module"
-  (`DiagnosticTroubleCodeHandler` accumulated *all* DTC replies, including init's; fixed on ObdMetrics
-  `feat/dtc-clear-status` with a start marker that resets it).
-  So `AdjustmentsStrategy` turns it off and `WorkflowOrchestrator.scheduleConnectScan` scans all modules.
-  ObdMetrics' `isRunning` is false inside `onRunning` (threads start after it), so anything scheduled
-  "on connect" must wait for `workflow.isRunning` off the callback thread. Untagged codes after a
-  reconnect: check the logcat for `InitCompletedHandler: Found Diagnostic Trouble Codes` first.
-* **2.0 GME DTC knowledge lives in ObdMetricsGiuliaQV, by the user's choice;** ObdMetrics core only offers generic
-  hooks. A PID's decoder is its `codecClass` (loaded by name), so the GME clear is a GiuliaQV codec + `dtcClear` in
-  `2.0_gme_ext.json`. Per-code requests (UDS `19 06` extended data) are `dtcFollowUp` templates (`{dtc}` placeholder);
-  their values arrive in `DiagnosticTroubleCode.details`. Spec: `doc/specs/dtc-extended-data.md`.
-* One clear PID per query across a profile's files: ObdMetrics' registry keeps every PID registered for a query and
-  the decoder runs each, so two clear codecs race (file order decides). Hence no `dtcClear` in `giulia_2.0_gme.json`.
-* Snapshot/follow-up requests must go to the code's own module (`ATSH`); before ObdMetrics `feat/dtc-follow-up-requests`
-  they went to the last scanned module and timed out (handler logs "Timed out waiting", a 5 s gap before "Notyfing").
-  The snapshot parser stops at the first DID it cannot resolve. A short freeze frame means a missing DID, or one whose
-  `length` differs from the frame: 2.0 GME stores 1812 / 1004 in 1 byte, their live replies 2. Snapshot sizes go in
-  the `dtcSnapshot` group (resolved before livedata, never queried live). Wrong turn: a 33-DID layout from the spec
-  document; the car sends 11. Trust a captured frame (logcat `TX: 19 04`), not the document.
-* A context reply that decodes to `null` is never published, so the DTC handler waits for it until its timeout (23 s
-  for 30 codes; the scan looks hung). Snapshot and follow-up codecs return an error response instead.
-* **VIN for DTC stamping is read alone, not with the metadata group.** ObdMetrics
-  `Adjustments.vehicleMetadataVinReadingEnabled` (set from `dtcEnabled` in `AdjustmentsStrategy`) makes the init queue
-  only the VIN PIDs while `fetchDeviceProperties` is off. **A VIN PID is one marked `"category": "vin"` in its resource
-  file** (`VinPids.isVin`, public in ObdMetrics `api`, used by the app too): no request values in code, by the user's
-  choice, and never the description (translated). Marked: `mode01.json` 11000 (09 02), `giulia_2.0_gme.json` 17001
-  (22 F190). A profile adding its own VIN PID must mark it, or DTC reads go unstamped (`UNKNOWN`).
-  It must not add METADATA to `getRequestedGroups()` — that reads the whole group. Read on
-  every connect, so a change of car shows. Rejected by the user: enabling the whole group; reading it only until a VIN is stored.
-  **Every DTC action also reads the VIN itself** (spec `doc/specs/dtc-vin-on-read.md`): ObdMetrics queues the VIN PIDs
-  after the start marker and passes the reply as `vin` in the four-argument `onDTCCompleted`; `updateDTC` stamps
-  `vinFromReply(vin) ?: getCurrentVin()`. Without it, with automatic DTC reading off (the default) manual reads /
-  clears went under `UNKNOWN` with no markers. Commands queued straight into the buffer take their `ATSH` from
-  `CommandProducer.headerFor`, never `switchHeader` (it skips a header it thinks is set; single-header mode sends one once).
-  "Markers gone after a clear" = check `DTC action completed: ... vin=` and `read info: ... vin=null` in logcat first.
-* **An empty VIN is `NO_VIN` (17 zeros), not null.** The 2.0 GME ECM can answer `22 F190` with 17 spaces (decoded
-  to ""). `vinFrom(metadata, vinLabels)` finds the VIN entry by the VIN PIDs' registry descriptions
-  (`VinPids.isVin`), since keys are translated labels; null still means "no VIN reply". `NO_VIN` never counts as
-  another vehicle and shows as "VIN not programmed".
-* **DTC history per vehicle** (`dtc/DtcHistory.kt`, `DtcHistoryDiff.kt`, `DtcHistoryStore.kt`; spec
-  `doc/specs/dtc-history.md`). Every `updateDTC` also appends a `DtcScan` to `files/dtc_history.json` (not prefs:
-  freeze frames), keyed by `historyKey(vin)` = upper-cased VIN or `UNKNOWN` — compare keys through `historyKey()`,
-  a raw lowercase constant once never matched. The list on screen is tied to its record by the read info's
-  timestamp: `DtcHistoryStore.diff(readInfo)` gives no markers unless that vehicle's newest scan has it.
-  Code identity is `itemKey()`. "New" / "gone" only count scans that *covered* the code (`DtcScan.covers`): a
-  module unchecked in the picker, a module scanned for the first time, or a default read vs a module scan must
-  not produce markers. `UNKNOWN` gets no markers, `NO_VIN` does (the 2.0 GME test car has no VIN programmed;
-  the user would never see the feature otherwise). AA gets "New" in the status line only, no gone section.
-  On the first device test the user saw "no difference": markers need a *change*, and the history lived in an
-  unmarked line of a row nobody knew expands. Hence the row chevron and the green "Code history" panel.
-  A one-line legend entry did not explain the workflow either ("why do cleared codes show up?"): the gone header has
-  a "How it works" chip and the legend a link, both `showDtcHistoryHelp` (spec `doc/specs/dtc-history-help.md`). The
-  explanation quotes UI labels; `DtcHistoryHelpTest` fails if one is renamed in EN or PL. A chip with its own click
-  inside a clickable header: `addMiniBadge` returns the chip.
-  A long `setMessage` on a platform `AlertDialog` pushed Close off a phone screen (help could not be closed): the help
-  text scrolls in a height-capped `ScrollView` (`helpMessageMaxHeight`). Do the same for any long dialog text.
-* **A module that did not answer is not clean** (spec `doc/specs/dtc-module-response.md`). ObdMetrics reports
-  `DtcModuleStatus` per scanned module via the three-argument `Lifecycle.onDTCCompleted` (the app overrides only that
-  one). Inside ObdMetrics, NO DATA / adapter errors never reach the DTC handler (`ObdCommandHandler` drops them), so
-  "no reply" = `NO_RESPONSE`; a refusal (`7F 19`) is marked by the read codec returning `DtcReadReply` (a `List` with a
-  status). Wrong turn: classifying `reply.getRaw()` - raw is published only with `collectRawConnectorResponseEnabled`,
-  so every module read as `NO_RESPONSE`. App: stored in `pref.datalogger.dtc.module_status` and `DtcScan.moduleStatus`;
-  `DtcScan.covers` skips unanswered modules, so they never produce "no longer reported".
-* **One DTC action at a time** (`dtc/DtcActionQueue.kt`). ObdMetrics' `scheduleDTCAction` clears its command buffer,
-  so an action scheduled while another runs cuts that one short, and both completions arrive. With per-action state
-  in single fields, Clear pressed during the connect scan stored the scan's result as the clear's and the clear's read
-  with no modules (list collapsed to "ECU"). Requests now wait in the queue; `onDTCCompleted` uses the finished
-  request's kind / modules and holds back `DATA_LOGGER_DTC_ACTION_COMPLETED` while another one waits. Logcat:
-  "DTC action completed: <kind>, ... next=<kind>". Any new DTC entry point must go through `submit()`.
-* **A read / clear of some modules updates only those** (`dtc/DtcStoredList.kt`, spec `doc/specs/dtc-clear-module.md`).
-  The clear's follow-up read covers the cleared modules alone, so `updateDTC` replacing the list made the other modules'
-  codes vanish. `mergedOver` keeps the untargeted modules' codes / statuses for READ / CLEAR of the same known vehicle;
-  CONNECT replaces (a module removed from the table must not linger). History records the read alone. The phone's
-  "Clear this module" button (`DtcListItem.ModuleClear`, right under the header: the user wants it at the top, and shown
-  even for the only module with codes - hiding it there looked like the button was gone) needs `dtcModuleRequestKey`: codes carry the display
-  label, `scheduleDTCCleanup` takes table `requestKey`s.
-* Engine-running check before a clear: `EngineStateTracker` (registered on `MetricsObserver`) keeps the last RPM /
-  vehicle-status reading; `engineRunning()` is null when older than 10 s or never seen. It only warns — the running
-  query may have no engine PID, so null must never block.
-* **New-code notification** (`dtc/DtcNewCodes.kt`, spec `doc/specs/dtc-new-code-notification.md`): `updateDTC` ends
-  with `DtcNewCodesAnnouncer.announce`, so every connect path is covered; only `CONNECT` scans with a VIN reply; all
-  codes on the vehicle's first scan, else only `diff.isNew` ones. "First scan" is read before `DtcHistoryStore.append`:
-  history replaces a connect scan equal to the previous one, so "one scan stored" re-announced unchanged codes forever.
-  Channel `dtc_alerts` is IMPORTANCE_HIGH (pop-up); default importance only lists it in the shade. Importance is frozen
-  once a channel exists on a device: changing it means a new channel id.
-  A pop-up shows only the collapsed line: keep it short (`DtcAnnouncement.summary`), full list in `bigText`.
-  Posted from `:datalogger` (service), not from `MainActivity`'s receivers, which die with the activity. Gate
-  `pref.dtc.notify_new_codes` (default on; the old `pref.dtc.show_notification` toast on *any* codes is gone). AA gets
-  `DATA_LOGGER_DTC_NEW_CODES` as a CarToast on `SurfaceRendererScreen` only. A notification's `PendingIntent` needs its
-  own request code: launch intents differing only in extras are one PendingIntent, and `FLAG_UPDATE_CURRENT` from
-  another code-0 launch intent replaces the extras. Open a screen from outside via `EXTRA_NAVIGATE_TO` (`:common`) +
-  `navigateToPreferencesScreen(key, openDialog = true)`.
-* Failure type text (`-14` in `P0120-14`) comes from the app's table (`dtc/DtcFailureType.kt`, strings in `:common`):
-  ObdMetrics' `failureType.description` is always "Unknown Subtype" (its map is empty). `DtcFailureTypeTest` checks
-  each entry's string name and EN / PL presence. Not on AA: its rows' two text lines are taken.
-* Scan progress (spec `doc/specs/dtc-scan-progress.md`): ObdMetrics `Lifecycle.onDTCProgress` comes from a marker
-  command queued ahead of each module's `ATSH`, so it fires as the module *starts* and also for modules that never
-  answer (no reply would). App broadcasts `DATA_LOGGER_DTC_PROGRESS`; `ScreenLockManager.updateProgress` touches only an
-  overlay shown with `DTC_SCREEN_LOCK_CONTEXT`. Not on AA: retitling a loading `ListTemplate` per module may cost
-  template steps. The connect scan shows that overlay too (`connectScanScreenLock`, user's choice): ObdMetrics queues
-  the whole scan ahead of live PIDs, so gauges freeze for its length. Its unlock is skipped while a request waits.
-* **Commands queued straight into the buffer must reset the header multiplexer** (ObdMetrics
-  `CommandProducer.resetHeader()`). `CANMessageHeaderMultiplexer` sees only producer commands; after a DTC action's own
-  `ATSH` it still believed the live header was set, and with a single-mode query (header injected once) live data
-  stayed on the last scanned module. DTC actions, follow-ups, routines and discovery reset it. A test must wait for
-  live data *before* the scan, or the one-time injection happens after it and hides the bug.
-* **One DTC read PID per query, like the clear.** ObdMetrics' `giulia_2.0_gme.json` and GiuliaQV's `2.0_gme_ext.json`
-  both defined `19020D`: the decoder ran both codecs, each code arrived twice (different descriptions, so not equal) and
-  its snapshot / extended data were requested twice (30 follow-ups instead of 17 on the car). The app's `distinctBy`
-  hid it on screen. The core read was removed (ObdMetrics tests load `dtc_read.json`); every app profile with
-  `giulia_2.0_gme.json` also loads `2.0_gme_ext.json`. Count the `19 04` requests in a logcat to spot a repeat.
-* **OBD-II services (03 / 07 / 0A, clear 04) go to the modules the user marks, never to a header guessed from a list**
-  (spec `doc/specs/dtc-obd-modes.md`). ObdMetrics `Init.Header.dtcProtocol` picks `DTC_OBD_READ` / `DTC_OBD_CLEAR`
-  (data in `mode01.json`) or the UDS groups; the app sets it from `pref.dtc.obd_modules` (`dtcScanHeaders`), set by the UDS / OBD-II buttons on each module picker row
-  (`DtcModulePickerAdapter`); a separate settings list was rejected as a second module list in another place. Wrong
-  turn, rejected by the user: hard-coded functional headers (`7DF` / `DB33F1`) plus Java-built requests. An ECU may
-  answer OBD-II at `7E0`, a non-CAN car has no such header. On the 2.0 GME `DB33F1` only repeats the ECM's UDS codes and
-  answers 0A with NO DATA, so no bundled profile marks a module. Permanent is a chip beside the state
-  (`PERMANENT_BADGE`); a clear leaving only permanent codes is `PERMANENT_REMAIN`.
-  The read on connect skips OBD-II modules while a UDS one is configured (`dtcConnectScanModules(mappings, obdModules)`):
-  an OBD-II entry reaching the ECM made a second ECM section. Switching a picker row to OBD-II unticks it (`onObdMarked`).
-* String resources drop a leading space: join text parts in code (`DtcReadInfo.summary`).
-* `dialog_close_window_action` is "Close\n " on purpose (two lines, to match the trip dialog's two-line buttons); next
-  to one-line buttons its label sits a line high. The DTC dialog uses its own `dtc.action_close`.
-* Building ObdMetrics: `mvn` needs JDK 11 (`JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64`); the
-  delombok plugin fails on JDK 21. Its test helpers (`SimpleLifecycle`, ...) live in the separate
-  `ObdMetricsTest` repo and do not capture the clear status, so a test needs its own `Lifecycle`.
-* AA `ListTemplate` action strips take **2** actions (`ACTIONS_CONSTRAINTS_SIMPLE`),
-  not 4 like the nav template — a third throws at build time.
-* AA template screens: a `CarScreen` added as observer of the *parent's* lifecycle (as `gotoScreen` does
-  for `RoutinesScreen`) gets the parent's pause when it is pushed, so its receiver should unregister while
-  it is on screen (read from the code, not yet confirmed on a DHU). `DiagnosticTroubleCodesScreen` observes its own lifecycle instead.
+
+### App shape after the simplification (2026-10-21)
+* Spec `doc/specs/simplified-app.md`. **Phone = settings, car = the Classic dashboard, nothing else** (user's choice after
+  the first drive: the upstream phone UI looked broken and the connection lagged). Do not add live-data screens to the phone
+  or a second AA screen without asking.
+* AA: `CarSession` → `ClassicCarScreen` (`automotive/.../screen/ClassicCarScreen.kt`): NavigationTemplate, action strip
+  with connect / disconnect + exit, `SurfaceRendererController` (same file's package) draws `SurfaceRenderer.classic(...)`.
+  The query is `Query.instance(CLASSIC_QUERY)`; `classicQuery()` applies the collector filter before every start / update.
+  `CarSettings` reads one key, `pref.aa.surface.fps`. Registry reloads (`PROFILE_CHANGED_EVENT`, `WORKFLOW_RELOAD_EVENT`)
+  invalidate the collector and update the query.
+* Phone: targetSdk 35 is edge-to-edge, so the theme is `NoActionBar` and the toolbar lives in `activity_main.xml`
+  (`AppBarLayout` with `fitsSystemWindows`); with the decor action bar the preference list drew under it.
+  `MainActivity` hosts `PreferencesFragment` in `settings_container`; nested `PreferenceScreen`s open through
+  `showPreferences(rootKey)` (back stack per key), `app:fragment` preferences (the CAN header table) through
+  `OnPreferenceStartFragmentCallback`. Preferences that call `navigateToPreferencesScreen(key)` after a change get their
+  screen reloaded in place (same key = no new back-stack entry). The FAB starts / stops the Classic query; the toolbar
+  subtitle shows connection type · profile · state.
+* `QueryStrategyType` has `CLASSIC_QUERY` only. `QueryStrategyOrchestrator` still injects `VEHICLE_STATUS` when
+  `pref.vehicle_settings.disconnect_when_off` is on (the only consumer left, `VehicleStatusMetricsProcessor`).
+* `AdjustmentsStrategy` turns DTC / VIN reading off unconditionally: there is no DTC code left in the app. If DTCs come
+  back, start from upstream's `datalogger/.../dtc` on `main` before this branch, not from scratch.
+* `DEFAULT_MAX_PROFILES` is 25: the BMW profile is `profile_21` and the picker enumerates ids, so 20 hid it (it was still
+  loaded and applied; only the list was wrong). Only `default*.properties` (app) and the BMW profile (automotive) ship.
+* The PID dialog has one mode, `edit` (`PidDefinitionDialogMode.Edit`); `PidDefinitionListPreferences` with another
+  `source` gets a plain selection dialog persisting to its key, nothing reads those keys today.
+* Removed ~550 unreferenced strings with a script (`@string/`, `R.string.` and `string.` lookups over all sources). When
+  deleting a feature, rerun that kind of sweep: lint does not fail on unused strings, they just rot.
+* Wrong turn avoided: keeping the other renderers "just in case" would have kept `ScreenSettings`, `screen_behavior`
+  and the virtual-screen prefs alive for nothing; `ClassicDrawer` never used them (tech design D2 / D8).
+
+### ObdMetrics lessons kept from the removed features
+These came out of DTC / readiness work that is gone from the app, but they describe ObdMetrics (the fork on
+`feat/bmw-extended-addressing`) and still bite any query switch or header change:
+* **"Nothing decoded any more" = check logcat for `ConnectorResponseDecoder ... Unexpected error` / `Completed decoder
+  thread`.** Every `updateQuery` queues UDS `10 01` (no PID); a reply that throws used to end the decoder thread, so after
+  a query switch nothing was decoded until the next connect while TX/RX looked healthy. Fixed in ObdMetrics
+  (`ConnectorResponseDecoder` skips PID-less replies, one failing reply no longer ends the thread).
+* **Commands queued straight into the buffer must reset the header multiplexer** (`CommandProducer.resetHeader()`), or
+  with a single-mode query live data stays on the last module an `ATSH` was sent to. A test must wait for live data
+  *before* such a command, or the one-time injection happens after it and hides the bug.
+* ObdMetrics drops query ids missing from the registry without an error: a screen with a fixed query must check its PIDs'
+  resource module is selected, or it waits forever (Classic: `ClassicQueryStrategy` filters by registry presence).
+* `DataLoggerRepository.observe()` conflates (LiveData `postValue`): of several metrics decoded from one batch reply only
+  the last reaches the observer. `observeEach()` delivers every one.
+* A context reply that decodes to `null` is never published; codecs return an error response instead.
+* Formula letters stop at `Z`: ObdMetrics threw on replies longer than 26 data bytes; fixed in
+  `ScriptEngineParameterBinder`, bytes past `Z` stay unreachable to a formula.
+* One PID per request id per query: the registry keeps every PID registered for a query and runs each codec, so two
+  files defining the same request double the traffic (count repeated requests in a logcat to spot it).
 
 ### Classic dashboard (AA; phase 1 on mock data)
 * Spec `doc/specs/classic-dashboard.md`. 11 fixed indicators on one AA page: 4 main round dials, 6 sub-dials and a
@@ -490,7 +230,8 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
 * Mockups `doc/specs/img/classic-dashboard*.svg` are generated by `scripts/mockups/classic_dashboard.py`. Edit the
   spec first, then the script, and regenerate. Preview with headless Chrome (the command is in the script).
   `qlmanage` crops SVGs to a square, so its thumbnails mislead.
-* Own `ClassicDrawer`, not a `GaugeDrawer` style: `GaugeDrawer` is shared by four screens.
+* Own `ClassicDrawer`, standalone: it never used upstream's `AbstractDrawer` / `ScreenSettings`, which is why the other
+  renderers could be deleted without touching it.
 * Printed red / blue zones (oil, coolant, gearbox, EGT) are static styling, never alerts (user's choice). They must
   not change with the value.
 * Red / blue are the BMW M stripe colours (`#F11A22` / `#008AC9`, BMW Blog's RGB; BMW publishes no hex), user's
@@ -510,8 +251,9 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
   run on the DHU before any real DID is known. `01 78` (EGT) is not defined in ObdMetrics' `mode01.json`.
 * Code: `renderer/classic/` (pure `ClassicDials` / `ClassicReadings` / `ClassicLayout`, `ClassicDrawer`,
   `ClassicStaticLayer`, `ClassicSurfaceRenderer`), ids in `:datalogger` `ClassicPids` (one copy; `ClassicDialsTest`
-  fails if a drawn id is not queried), `CLASSIC_QUERY`, `SurfaceRendererType.CLASSIC(6)` (persisted, never renumber),
-  profile `profile_21` (`automotive/src/main/assets/bmw_g31_520d_mhev.properties`).
+  fails if a drawn id is not queried), `CLASSIC_QUERY`, `SurfaceRenderer.classic()` (the only renderer; `SurfaceRendererType`
+  is gone), profile `profile_21` (`automotive/src/main/assets/bmw_g31_520d_mhev.properties`). Pointer easing / staleness:
+  `ClassicFrameStates` (ex `GaugeFrameStates`).
 * **`bmw_b47_mhev.json` lives in `datalogger/src/main/resources/`, not ObdMetrics.** ObdMetrics finds PID files with the
   context class loader, and any module's Java resources land at the APK root next to `mode01.json`; no jar rebuild per
   DID. Its DIDs are SGBD candidates (tech design §4.3), not yet seen on the car; ids `40101`–`40113` are probe PIDs
@@ -533,7 +275,6 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
   the ticks and numerals orange. Draw order is the mockup script's.
 * Staleness: only boost and the starter-generator are fast (10 s). `mode01.json` reads coolant and IAT at priority 2
   (every 16th cycle), which a 10 s limit greys out, so every other slot uses 60 s.
-* `Fps` is a class, not an interface: a `Proxy` stub cannot stand in for it in tests.
 * Profile loader: only `-?\d+` values become `Int`, so headers like `7E0` / `6F1` stay strings unquoted; ECU addresses
   such as `12` / `612` still need quotes.
 
@@ -549,34 +290,6 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
 * ObdMetrics on this Mac: `mvn` with JDK 11 (`~/Library/Android/jdk/jdk-11*`), `-Dlombok.delombok.skip=true`. On JDK 17
   delombok fails and ~800 tests fail (no Nashorn JS engine for formulas) — not a code problem.
 
-### Readiness monitors (phone)
-* Spec `doc/specs/readiness-monitors.md`. ObdMetrics decodes 01 01 / 01 41 (`ReadinessMonitorsCodec`, ids 21010 /
-  21011, `"category": "readiness"`) into a `ReadinessStatus` object, not a number. Hence `isReadinessPid()` keeps
-  them out of the PID pickers: on a gauge they would only show NaN. Display logic: `bl/readiness/Readiness.kt`.
-* Reached from the menu (`ctx_menu_readiness` → sub-screen `pref.readiness`, which opens the dialog). The menu's
-  DTC item opens only the `pref.dtc` sub-screen, so an entry placed in the root settings alone is never seen —
-  any new top-level feature needs a menu item, not just a preferences.xml category.
-* Link with DTC: the readiness dialog stores the last since-clear result (`pref.readiness.last`, `ReadinessSnapshot`);
-  the DTC dialog shows it as a row opening the readiness dialog. An accepted clear drops it (`resetsReadiness`).
-  A dialog opened from a dialog goes on its `childFragmentManager`; refresh in `onFragmentViewDestroyed`, since the
-  parent dialog gets no onResume when it closes.
-* ObdMetrics drops query ids missing from the registry without an error. A screen with a fixed query must check that
-  its PIDs' resource module is selected (readiness: `hasReadinessPids()`, Mode01) or it waits forever.
-* The dialog switches the running query to `READINESS_QUERY` and restores `DataLoggerRepository.runningQuery()`
-  on close. Any other screen that polls its own PIDs from a dialog must restore the same way.
-* **"Nothing decoded any more" = check logcat for `ConnectorResponseDecoder ... Unexpected error` / `Completed decoder
-  thread`.** Every `updateQuery` queues UDS `10 01` (no PID); since the module-tagging change its reply threw an NPE
-  that ended ObdMetrics' decoder thread, so after any query switch no reply (live data, readiness, DTC) was decoded
-  until the next connect, while TX/RX still looked healthy. Fixed in ObdMetrics `ConnectorResponseDecoder` (skips
-  PID-less replies, and one failing reply no longer ends the thread).
-* **`DataLoggerRepository.observe()` conflates** (LiveData `postValue`): metrics decoded from one batch reply arrive
-  back to back and only the last reaches the observer. Fine for gauges reading the collector; a screen that needs
-  each PID's reply uses `observeEach()`. The readiness dialog sat at "waiting" until it switched.
-* ObdMetrics' batch decoder used to map a PID the ECU did not answer onto the reply's answer code (PID 41 in
-  `4101...`); fixed in `CachedBatchMessageDecoder` on `feat/readiness-monitors`. The 2.0 GME answers only 01 01 / 01 21
-  of the readiness query. To check a batch on the bench, decode the logged TX/RX with `BatchCodec` in a test.
-* Adding a mode 01 PID with pid "01" broke ObdMetrics' batch tests: `BatchCodecTestRunner` turned every query token,
-  the mode included, into a PID. It now skips the first token. Production builds commands from ids and was fine.
 
 ### Connectors (`:datalogger/.../connectors`)
 * One `AdapterConnection` per transport, chosen by `ConnectionManager.obtain()` on
@@ -683,12 +396,13 @@ gives the timestamped jar name; a CI run started before that timestamp cannot se
   the service returns `START_NOT_STICKY`; `START_STICKY` only ever bought those null restarts.
 
 ### Preferences & localization
-* Preference UI: `app/src/main/res/xml/preferences.xml` (AA sections under `pref.aa.*`). Code defaults in `Prefs.getBoolean(key, default)` should match the XML `android:defaultValue` — the XML value gets persisted once the settings screen is opened.
+* Preference UI: `app/src/main/res/xml/preferences.xml` (Connection, Adapter init, Adapter advanced, PIDs, Profile, Debug). Code defaults in `Prefs.getBoolean(key, default)` should match the XML `android:defaultValue` — the XML value gets persisted once the settings screen is opened.
 * `preferences.xml` references custom preference classes by **fully-qualified name**, so renaming
-  one and missing the XML fails at *runtime*, not compile time. `assembleGiuliaDebug` plus opening
+  one and missing the XML fails at *runtime*, not compile time. `assembleGiuliaAADebug` plus opening
   the settings screen is the real check.
 * The connection type uses **two** arrays: `pref.connection_type_array` (persisted values, never
   localized or reordered) and `pref.connection_type_entries` (display labels). They are
   index-aligned, and `ConnectionTypeListPreference` drops `mock` in release builds by *index* to
   keep them so.
 * Strings exist only in `values/strings.xml` (EN) and `values-pl/strings.xml` (PL). Every new user-facing string must be added to **both**.
+  The app follows the system locale and theme; the in-app language / theme pickers were removed with the wizard.

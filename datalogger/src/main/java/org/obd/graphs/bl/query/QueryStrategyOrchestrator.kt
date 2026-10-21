@@ -19,42 +19,33 @@ package org.obd.graphs.bl.query
 import android.util.Log
 import org.obd.graphs.bl.datalogger.Pid
 import org.obd.graphs.bl.datalogger.dataLoggerSettings
-import org.obd.graphs.preferences.Prefs
-import org.obd.graphs.preferences.getLongSet
 
 private const val TAG = "QueryOrchestrator"
 
 internal class QueryStrategyOrchestrator :
     java.io.Serializable,
     Query {
-    private val strategies: Map<QueryStrategyType, QueryStrategy> = mapOf(
-        QueryStrategyType.SHARED_QUERY to SharedQueryStrategy(),
-        QueryStrategyType.DRAG_RACING_QUERY to DragRacingQueryStrategy(),
-        QueryStrategyType.INDIVIDUAL_QUERY to IndividualQueryStrategy(),
-        QueryStrategyType.ROUTINES_QUERY to RoutinesQueryStrategy(),
-        QueryStrategyType.TRIP_INFO_QUERY to TripInfoQueryStrategy(),
-        QueryStrategyType.PERFORMANCE_QUERY to PerformanceQueryStrategy(),
-        QueryStrategyType.READINESS_QUERY to ReadinessQueryStrategy(),
-        QueryStrategyType.CLASSIC_QUERY to ClassicQueryStrategy()
-    )
+    private val strategies: Map<QueryStrategyType, QueryStrategy> =
+        mapOf(
+            QueryStrategyType.CLASSIC_QUERY to ClassicQueryStrategy()
+        )
 
-    private var strategy: QueryStrategyType = QueryStrategyType.SHARED_QUERY
+    private var strategy: QueryStrategyType = QueryStrategyType.CLASSIC_QUERY
 
     override fun getDefaultPIDs(): Set<Long> = strategies[strategy]?.getDefaultPIDs() ?: emptySet()
 
     override fun getIDs(): MutableSet<Long> {
         val pids = strategies[strategy]?.getPIDs() ?: mutableSetOf()
 
-        if (dataLoggerSettings.instance().vehicleStatusPanelEnabled ||
-            dataLoggerSettings.instance().vehicleStatusDisconnectWhenOff
-        ) {
+        // Injected into every query: the vehicle status processor needs it to see the ignition go off.
+        if (dataLoggerSettings.instance().vehicleStatusDisconnectWhenOff) {
             pids.add(Pid.VEHICLE_STATUS_PID_ID.id)
         }
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "${currentThread()} Gets PIDs '$pids' for current strategy $strategy")
         }
 
-        return pids.filter { it != Pid.GPS_LOCATION_PID_ID.id }.toMutableSet()
+        return pids
     }
 
     override fun getStrategy(): QueryStrategyType = strategy
@@ -76,48 +67,5 @@ internal class QueryStrategyOrchestrator :
         return this
     }
 
-    override fun filterBy(filter: String): Set<Long> {
-        val query = getIDs()
-        val selection = Prefs.getLongSet(filter)
-        val intersection = selection.intersect(query)
-
-        if (Log.isLoggable(TAG, Log.DEBUG)) {
-            Log.d(
-                TAG,
-                "${currentThread()} Individual query enabled:${isIndividualQuerySelected()}, " +
-                    " key:$filter, query=$query,selection=$selection, intersection=$intersection"
-            )
-        }
-
-        return if (isIndividualQuerySelected()) {
-            if (Log.isLoggable(TAG, Log.DEBUG)) {
-                Log.d(TAG, "${currentThread()} Returning selection=$selection")
-            }
-
-            selection
-        } else {
-            Log.i(TAG, "${currentThread()} Returning intersection=$intersection")
-            intersection
-        }
-    }
-
     private fun currentThread() = "[${Thread.currentThread().id}, ${hashCode()}]"
-
-    override fun apply(filter: String): Query =
-        if (isIndividualQuerySelected()) {
-            setStrategy(QueryStrategyType.INDIVIDUAL_QUERY)
-                .update(filterBy(filter))
-        } else {
-            setStrategy(QueryStrategyType.SHARED_QUERY)
-        }
-
-    override fun apply(filter: Set<Long>): Query =
-        if (isIndividualQuerySelected()) {
-            setStrategy(QueryStrategyType.INDIVIDUAL_QUERY)
-                .update(filter)
-        } else {
-            setStrategy(QueryStrategyType.SHARED_QUERY)
-        }
-
-    private fun isIndividualQuerySelected() = dataLoggerSettings.instance().adapter.individualQueryStrategyEnabled
 }

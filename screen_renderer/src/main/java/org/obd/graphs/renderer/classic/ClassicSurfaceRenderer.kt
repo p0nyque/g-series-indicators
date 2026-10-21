@@ -24,10 +24,7 @@ import org.obd.graphs.bl.collector.Metric
 import org.obd.graphs.bl.collector.MetricsCollector
 import org.obd.graphs.bl.datalogger.DataLoggerRepository
 import org.obd.graphs.bl.query.ClassicPids
-import org.obd.graphs.renderer.AbstractSurfaceRenderer
-import org.obd.graphs.renderer.api.Fps
-import org.obd.graphs.renderer.api.ScreenSettings
-import org.obd.graphs.renderer.gauge.GaugeFrameStates
+import org.obd.graphs.renderer.api.SurfaceRenderer
 
 private const val NANOS_PER_SECOND = 1_000_000_000L
 
@@ -43,16 +40,14 @@ private const val SLOW_STALE_AFTER_NANOS = 60 * NANOS_PER_SECOND
  */
 internal class ClassicSurfaceRenderer(
     context: Context,
-    @Suppress("UNUSED_PARAMETER") settings: ScreenSettings,
     private val metricsCollector: MetricsCollector,
-    @Suppress("UNUSED_PARAMETER") fps: Fps,
     private val isRunning: () -> Boolean = { DataLoggerRepository.isRunning() },
     private val clock: () -> Long = System::nanoTime
-) : AbstractSurfaceRenderer(context) {
+) : SurfaceRenderer {
     private val drawer = ClassicDrawer(context)
     private val staticLayer = ClassicStaticLayer(drawer)
-    private val fastStates = GaugeFrameStates(staleAfterNanos = FAST_STALE_AFTER_NANOS)
-    private val slowStates = GaugeFrameStates(staleAfterNanos = SLOW_STALE_AFTER_NANOS)
+    private val fastStates = ClassicFrameStates(staleAfterNanos = FAST_STALE_AFTER_NANOS)
+    private val slowStates = ClassicFrameStates(staleAfterNanos = SLOW_STALE_AFTER_NANOS)
 
     private var layout: ClassicLayout? = null
 

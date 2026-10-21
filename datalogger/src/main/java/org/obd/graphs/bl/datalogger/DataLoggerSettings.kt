@@ -24,9 +24,6 @@ data class Adapter(
     @XmlPreference("pref.vehicle_settings.auto_connect_once_launched", "false", Boolean::class)
     var autoConnectEnabled: Boolean = false,
 
-    @XmlPreference("pref.adapter.gps.collect.enabled", "false", Boolean::class)
-    var gpsCollecetingEnabled: Boolean = false,
-
     @XmlPreference("pref.adapter.id", "OBDII", String::class)
     var deviceAddress: String = "OBDII",
 
@@ -119,15 +116,6 @@ data class Adapter(
     @XmlPreference("pref.adapter.init.fetchSupportedPids", "true", Boolean::class)
     var vehicleCapabilitiesReadingEnabled: Boolean = true,
 
-    @XmlPreference("pref.adapter.init.fetchDTC", "false", Boolean::class)
-    var dtcEnabled: Boolean = false,
-
-    @XmlPreference("pref.adapter.init.cleanDTC", "false", Boolean::class)
-    var dtcAutoCleanup: Boolean = false,
-
-    @XmlPreference("pref.dtc.read_snapshots", "false", Boolean::class)
-    var dtcReadSnapshots: Boolean = false,
-
     @XmlPreference("pref.adapter.responseLength.enabled", "false", Boolean::class)
     var calculateResponseFrames: Boolean = false,
 
@@ -142,8 +130,6 @@ data class DataLoggerSettings(
     var adapter: Adapter = Adapter(),
     @XmlPreference("pref.debug.logging.enabled", "false", Boolean::class)
     var debugLogging: Boolean = false,
-    @XmlPreference("pref.drag_race.vehicle_speed.freq", "10", Long::class)
-    var dragRacingCommandFrequency: Long = 10,
     @XmlPreference("pref.mode", "Generic mode", String::class)
     var mode: String = "Generic mode",
     @XmlPreference("pref.pids.registry.list", "", Set::class)
@@ -152,8 +138,6 @@ data class DataLoggerSettings(
     var dumpRawConnectorResponse: Boolean = false,
     @XmlPreference("pref.vehicle_settings.fuelTankSize", "58", Int::class)
     var fuelTankSize: Int = 58,
-    @XmlPreference("pref.vehicle_settings.vehicle_status_panel_enabled", "false", Boolean::class)
-    var vehicleStatusPanelEnabled: Boolean = false,
     @XmlPreference("pref.vehicle_settings.disconnect_when_off", "false", Boolean::class)
     var vehicleStatusDisconnectWhenOff: Boolean = false,
     @XmlPreference("pref.profile.2_0_GME_extension.enabled", "false", Boolean::class)

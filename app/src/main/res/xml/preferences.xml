@@ -1,172 +1,130 @@
-    <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     app:key="pref.root">
 
-    <org.obd.graphs.preferences.LanguagePreferences
-        android:key="pref.app.language"
-        android:title="@string/pref.language.title"
-        android:summary="@string/pref.language.summary"
-        android:persistent="false" />
-
-    <org.obd.graphs.wizard.RunSetupWizardAction
-        android:key="pref.wizard.rerun"
-        android:title="@string/pref.wizard.rerun_title"
-        android:summary="@string/pref.wizard.rerun_summary"
-        android:persistent="false" />
-
-    <org.obd.graphs.preferences.ThemeListPreference
-        android:entries="@array/pref.app_theme_entries"
-        android:entryValues="@array/pref.app_theme_values"
-        android:key="pref.app.theme"
-        android:title="@string/pref.app.theme_title"
-        android:persistent="false"
-        app:useSimpleSummaryProvider="true" />
-
-    <PreferenceCategory android:title="@string/pref.trips.title">
-        <org.obd.graphs.preferences.DriveAutoSyncEnablerCheckBoxPreference
-                android:defaultValue="false"
-                android:dialogTitle="@string/pref.trips.drive.auto_sync_enabled"
-                android:key="pref.trips.drive.auto_sync"
-                android:title="@string/pref.trips.drive.auto_sync_enabled"
-                android:summary="@string/pref.trips.drive.auto_sync_enabled_summary"
-                app:singleLineTitle="false" />
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/pref.registry.category">
+    <PreferenceCategory android:title="@string/pref.connection.category">
         <PreferenceScreen
-            android:key="pref.registry"
-            android:summary="@string/pref_pid_registry_settings_summary"
+            android:key="pref.adapter.connection"
+            android:summary="@string/pref.connection.category.summary"
             android:title="@string/pref.settings"
             app:singleLineTitle="false">
 
-            <PreferenceCategory android:title="@string/pref.registry.category">
+            <org.obd.graphs.preferences.ConnectionTypeListPreference
+                android:defaultValue="bluetooth"
+                android:dialogTitle="@string/pref.connection.connection_type_dialog"
+                android:entries="@array/pref.connection_type_entries"
+                android:entryValues="@array/pref.connection_type_array"
+                android:key="pref.adapter.connection.type"
+                android:title="@string/pref.connection.connection_type"
+                app:useSimpleSummaryProvider="true" />
 
-                <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                    android:dialogTitle="@string/pref.pid.manage_dialog"
-                    android:key="pref.pids.edit"
-                    android:summary="@string/pref.pid.manage_dialog_summary"
-                    android:title="@string/pref.pid.manage_dialog"
-                    app:singleLineTitle="false"
-                    app:source="edit" />
+            <PreferenceCategory
+                android:key="pref.adapter.connection.type.bluetooth"
+                android:title="@string/pref.bluetooth_category">
 
+                <org.obd.graphs.preferences.BluetoothClassicAdaptersListPreferences
+                    android:defaultValue="@array/pref.empty_array"
+                    android:dialogTitle="@string/pref.adapter_id"
+                    android:key="pref.adapter.id"
+                    android:title="@string/pref.adapter_id"
+                    app:useSimpleSummaryProvider="true" />
+            </PreferenceCategory>
 
-                <org.obd.graphs.preferences.pid.IndividualQueryStrategyCheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="pref.adapter.query.individual.enabled"
-                    android:summary="@string/pref.adapter.query.view_individual.enabled_summary"
-                    android:title="@string/pref.adapter.query.view_individual.enabled"
-                    app:singleLineTitle="false" />
+            <PreferenceCategory
+                android:key="pref.adapter.connection.type.ble"
+                android:title="@string/pref.ble_category">
 
-                <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                    app:dependency="pref.adapter.query.individual.enabled"
-                    android:dialogTitle="@string/pref.pid.generic_high"
-                    android:key="pref.pids.generic.high"
-                    android:summary="@string/pref.pid.generic_high_summary"
-                    android:title="@string/pref.pid.generic_high"
-                    app:singleLineTitle="false"
-                    app:source="high" />
-
-                <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                    app:dependency="pref.adapter.query.individual.enabled"
-                    android:dialogTitle="@string/pref.pid.generic_low"
-                    android:key="pref.pids.generic.low"
-                    android:summary="@string/pref.pid.generic_low_summary"
-                    android:title="@string/pref.pid.generic_low"
-                    app:singleLineTitle="false"
-                    app:source="low" />
-
-                <org.obd.graphs.preferences.GpsEnablerCheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="pref.adapter.gps.collect.enabled"
-                    android:summary="@string/pref.adapter.collect.gps.enabled_summary"
-                    android:title="@string/pref.adapter.collect.gps.enabled_title"
-                    app:singleLineTitle="false" />
-
-                <SwitchPreferenceCompat
-                    android:defaultValue="true"
-                    android:dialogTitle="@string/pref.pids.group.enableCapabilitiesReadings"
-                    android:key="pref.adapter.init.fetchSupportedPids"
-                    android:summary="@string/pref.pids.group.enableCapabilitiesReadings_summary"
-                    android:title="@string/pref.pids.group.enableCapabilitiesReadings"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.pid.FilterBySupportedPIDsAction
-                    android:defaultValue="false"
-                    android:dialogTitle="@string/pref.pids_display_only_ecu_supported"
-                    android:key="pref.pids.registry.filter_pids_ecu_supported"
-                    android:summary="@string/pref.pids_display_only_ecu_supported_summary"
-                    android:title="@string/pref.pids_display_only_ecu_supported"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.pid.FilterByStablePIDsAction
-                    android:defaultValue="false"
-                    android:dialogTitle="@string/pref.pids_display_only_ecu_supported"
-                    android:key="pref.pids.registry.filter_pids_stable"
-                    android:summary="@string/pref.pids_display_only_stable_pids_summary"
-                    android:title="@string/pref.pids_display_only_stable_pids"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.pid.ModulesListPreferences
-                    android:dialogTitle="@string/pref.pids.registry.resource_list"
-                    android:key="pref.pids.registry.list"
-                    android:summary="@string/pref.pids.registry.resource.list_summary"
-                    android:title="@string/pref.pids.registry.resource_list"
+                <org.obd.graphs.preferences.BleAdaptersListPreferences
+                    android:defaultValue="@array/pref.empty_array"
+                    android:dialogTitle="@string/pref.ble.adapter_id"
+                    android:key="pref.adapter.connection.ble.id"
+                    android:title="@string/pref.ble.adapter_id"
                     app:useSimpleSummaryProvider="true" />
 
-                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:defaultValue="false"
-                    android:dialogTitle="@string/pref.pids.registry.resource.external_storage"
-                    android:key="pref.pids.registry.access_external_storage"
-                    android:summary="@string/pref.experimental_read_external_storage_enabled"
-                    android:title="@string/pref.pids.registry.resource.external_storage"
-                    app:enabled="@bool/FF_READ_RESOURCE_EXTERNAL_STORAGE_ENABLED"
-                    app:experimental="true"
+                <org.obd.graphs.preferences.BleProfileListPreference
+                    android:defaultValue="AUTO"
+                    android:dialogTitle="@string/pref.ble.profile"
+                    android:key="pref.adapter.connection.ble.profile"
+                    android:summary="@string/pref.ble.profile_summary"
+                    android:title="@string/pref.ble.profile"
                     app:singleLineTitle="false" />
 
-                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="pref.pids.custom_order.enabled"
-                    android:summary="@string/pref.pids.custom_order.enabled_summary"
-                    android:title="@string/pref.pids.custom_order.enabled"
-                    app:experimental="true"
-                    app:singleLineTitle="false" />
+                <EditTextPreference
+                    android:defaultValue=""
+                    android:dialogTitle="@string/pref.ble.service_uuid"
+                    android:key="pref.adapter.connection.ble.service_uuid"
+                    android:title="@string/pref.ble.service_uuid"
+                    app:singleLineTitle="false"
+                    app:useSimpleSummaryProvider="true" />
 
+                <EditTextPreference
+                    android:defaultValue=""
+                    android:dialogTitle="@string/pref.ble.notify_uuid"
+                    android:key="pref.adapter.connection.ble.notify_uuid"
+                    android:title="@string/pref.ble.notify_uuid"
+                    app:singleLineTitle="false"
+                    app:useSimpleSummaryProvider="true" />
+
+                <EditTextPreference
+                    android:defaultValue=""
+                    android:dialogTitle="@string/pref.ble.write_uuid"
+                    android:key="pref.adapter.connection.ble.write_uuid"
+                    android:summary="@string/pref.ble.write_uuid_summary"
+                    android:title="@string/pref.ble.write_uuid"
+                    app:singleLineTitle="false" />
             </PreferenceCategory>
 
-            <PreferenceCategory android:title="@string/pref.pid.custom.category">
+            <PreferenceCategory
+                android:key="pref.adapter.connection.type.usb"
+                android:title="@string/pref.usb_category">
 
-                <org.obd.graphs.preferences.pid.CustomPidsPublishAction
-                    android:key="pref.pids.custom.publish"
-                    android:summary="@string/pref.pid.custom.publish_summary"
-                    android:title="@string/pref.pid.custom.publish"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.pid.CustomPidsDownloadAction
-                    android:key="pref.pids.custom.download"
-                    android:summary="@string/pref.pid.custom.download_summary"
-                    android:title="@string/pref.pid.custom.download"
-                    app:singleLineTitle="false" />
-
+                <ListPreference
+                    android:defaultValue="38400"
+                    android:entries="@array/pref.baud_rate_list"
+                    android:entryValues="@array/pref.baud_rate_list"
+                    android:inputType="number"
+                    android:key="pref.adapter.connection.usb.baud_rate"
+                    android:summary="@string/pref.usb.baud_rate"
+                    android:title="@string/pref.usb.baud_rate"
+                    app:singleLineTitle="false"
+                    app:useSimpleSummaryProvider="true" />
             </PreferenceCategory>
-        </PreferenceScreen>
-    </PreferenceCategory>
 
+            <PreferenceCategory
+                android:key="pref.adapter.connection.type.wifi"
+                android:title="@string/pref.wifi_category">
 
-    <PreferenceCategory android:title="@string/pref.adapter_category">
-        <PreferenceScreen
-            android:key="pref.adapter"
-            android:summary="@string/pref_adapter_settings_summary"
-            android:title="@string/pref.settings"
-            app:singleLineTitle="false">
+                <org.obd.graphs.preferences.WifiSSIDListPreferences
+                    android:dialogTitle="@string/pref.adapter_connection_tcp_ssid"
+                    android:key="pref.adapter.connection.tcp.ssid"
+                    android:title="@string/pref.adapter_connection_tcp_ssid"
+                    app:useSimpleSummaryProvider="true" />
+
+                <EditTextPreference
+                    android:defaultValue="192.168.0.10"
+                    android:dialogTitle="@string/pref.adapter_connection_tcp_host"
+                    android:key="pref.adapter.connection.tcp.host"
+                    android:title="@string/pref.adapter_connection_tcp_host"
+                    app:useSimpleSummaryProvider="true" />
+
+                <EditTextPreference
+                    android:defaultValue="35000"
+                    android:dialogTitle="Port"
+                    android:key="pref.adapter.connection.tcp.port"
+                    android:title="@string/pref.adapter_connection_tcp_port"
+                    app:useSimpleSummaryProvider="true" />
+            </PreferenceCategory>
 
             <PreferenceCategory android:title="@string/pref.connection.auto_connect.category">
-                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="pref.vehicle_settings.disconnect_when_off"
-                    android:summary="@string/pref.vehicle_settings.disconnect_when_off_summary"
-                    android:title="@string/pref.vehicle_settings.disconnect_when_off"
-                    app:experimental="true"
-                    app:singleLineTitle="false" />
+                <ListPreference
+                    android:defaultValue="1000"
+                    android:dialogTitle="@string/pref.connection.connection_timeout"
+                    android:entries="@array/pref.numbers_500_6000"
+                    android:entryValues="@array/pref.numbers_500_6000"
+                    android:key="pref.adapter.connection.timeout"
+                    android:title="@string/pref.connection.connection_timeout"
+                    app:useSimpleSummaryProvider="true" />
 
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
                     android:defaultValue="false"
@@ -175,294 +133,165 @@
                     android:title="@string/pref.vehicle_settings.auto_connect_once_launched"
                     app:experimental="false"
                     app:singleLineTitle="false" />
+
+                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
+                    android:defaultValue="false"
+                    android:key="pref.vehicle_settings.disconnect_when_off"
+                    android:summary="@string/pref.vehicle_settings.disconnect_when_off_summary"
+                    android:title="@string/pref.vehicle_settings.disconnect_when_off"
+                    app:experimental="true"
+                    app:singleLineTitle="false" />
             </PreferenceCategory>
+        </PreferenceScreen>
+    </PreferenceCategory>
 
-            <PreferenceCategory android:title="@string/pref.connection.category">
-                <PreferenceScreen
-                    android:key="pref.adapter.connection"
-                    android:summary="@string/pref.connection.category.summary"
-                    android:title="@string/pref.settings"
-                    app:singleLineTitle="false"
-                    app:title="@string/pref.connection.category">
+    <PreferenceCategory android:title="@string/pref.adapter_category">
+        <PreferenceScreen
+            android:key="pref.init"
+            android:summary="@string/pref.init_category_summary"
+            android:title="@string/pref.init_category"
+            app:singleLineTitle="false">
 
-                    <org.obd.graphs.preferences.AdapterTypeListPreference
-                        android:defaultValue="DEFAULT"
-                        android:entries="@array/pref.adapter_type_entries"
-                        android:entryValues="@array/pref.adapter_type_values"
-                        android:key="pref.adapter.type"
-                        android:title="@string/pref.adapter.type"
-                        app:useSimpleSummaryProvider="true" />
+            <ListPreference
+                android:defaultValue="AUTO"
+                android:entries="@array/pref.init_protocol"
+                android:entryValues="@array/pref.init_protocol"
+                android:key="pref.adapter.init.protocol"
+                android:title="@string/pref.adapter_init_protocol"
+                app:useSimpleSummaryProvider="true" />
 
-                    <ListPreference
-                        android:defaultValue="1000"
-                        android:dialogTitle="@string/pref.connection.connection_timeout"
-                        android:entries="@array/pref.numbers_500_6000"
-                        android:entryValues="@array/pref.numbers_500_6000"
-                        android:key="pref.adapter.connection.timeout"
-                        android:title="@string/pref.connection.connection_timeout"
-                        app:useSimpleSummaryProvider="true" />
+            <ListPreference
+                android:defaultValue="500"
+                android:entries="@array/pref.numbers_500_6000"
+                android:entryValues="@array/pref.numbers_500_6000"
+                android:inputType="number"
+                android:key="pref.adapter.init.delay"
+                android:title="@string/pref.adapter_init_delay"
+                app:useSimpleSummaryProvider="true" />
 
-                    <org.obd.graphs.preferences.ConnectionTypeListPreference
-                        android:defaultValue="bluetooth"
-                        android:dialogTitle="@string/pref.connection.connection_type_dialog"
-                        android:entries="@array/pref.connection_type_entries"
-                        android:entryValues="@array/pref.connection_type_array"
-                        android:key="pref.adapter.connection.type"
-                        android:title="@string/pref.connection.connection_type"
-                        app:useSimpleSummaryProvider="true" />
+            <ListPreference
+                android:defaultValue="0"
+                android:entries="@array/pref.numbers_500_6000"
+                android:entryValues="@array/pref.numbers_500_6000"
+                android:inputType="number"
+                android:key="pref.adapter.init.delay_after_reset"
+                android:title="@string/pref.adapter_delay_reset"
+                app:useSimpleSummaryProvider="true" />
 
-                    <PreferenceCategory
-                        android:key="pref.adapter.connection.type.bluetooth"
-                        android:title="@string/pref.bluetooth_category">
+            <ListPreference
+                android:defaultValue="DEFAULT"
+                android:entries="@array/pref.init_sequence"
+                android:entryValues="@array/pref.init_sequence"
+                android:key="pref.adapter.init.sequence"
+                android:title="@string/pref.adapter_init_sequence"
+                app:useSimpleSummaryProvider="true" />
 
-                        <org.obd.graphs.preferences.BluetoothClassicAdaptersListPreferences
-                            android:defaultValue="@array/pref.empty_array"
-                            android:dialogTitle="@string/pref.adapter_id"
-                            android:key="pref.adapter.id"
-                            android:title="@string/pref.adapter_id"
-                            app:useSimpleSummaryProvider="true" />
-                    </PreferenceCategory>
-
-                    <PreferenceCategory
-                        android:key="pref.adapter.connection.type.ble"
-                        android:title="@string/pref.ble_category">
-
-                        <org.obd.graphs.preferences.BleAdaptersListPreferences
-                            android:defaultValue="@array/pref.empty_array"
-                            android:dialogTitle="@string/pref.ble.adapter_id"
-                            android:key="pref.adapter.connection.ble.id"
-                            android:title="@string/pref.ble.adapter_id"
-                            app:useSimpleSummaryProvider="true" />
-
-                        <org.obd.graphs.preferences.BleProfileListPreference
-                            android:defaultValue="AUTO"
-                            android:dialogTitle="@string/pref.ble.profile"
-                            android:key="pref.adapter.connection.ble.profile"
-                            android:summary="@string/pref.ble.profile_summary"
-                            android:title="@string/pref.ble.profile"
-                            app:singleLineTitle="false" />
-
-                        <EditTextPreference
-                            android:defaultValue=""
-                            android:dialogTitle="@string/pref.ble.service_uuid"
-                            android:key="pref.adapter.connection.ble.service_uuid"
-                            android:title="@string/pref.ble.service_uuid"
-                            app:singleLineTitle="false"
-                            app:useSimpleSummaryProvider="true" />
-
-                        <EditTextPreference
-                            android:defaultValue=""
-                            android:dialogTitle="@string/pref.ble.notify_uuid"
-                            android:key="pref.adapter.connection.ble.notify_uuid"
-                            android:title="@string/pref.ble.notify_uuid"
-                            app:singleLineTitle="false"
-                            app:useSimpleSummaryProvider="true" />
-
-                        <EditTextPreference
-                            android:defaultValue=""
-                            android:dialogTitle="@string/pref.ble.write_uuid"
-                            android:key="pref.adapter.connection.ble.write_uuid"
-                            android:summary="@string/pref.ble.write_uuid_summary"
-                            android:title="@string/pref.ble.write_uuid"
-                            app:singleLineTitle="false" />
-                    </PreferenceCategory>
-
-                    <PreferenceCategory
-                        android:key="pref.adapter.connection.type.usb"
-                        android:title="@string/pref.usb_category">
-
-                        <ListPreference
-                            android:defaultValue="38400"
-                            android:entries="@array/pref.baud_rate_list"
-                            android:entryValues="@array/pref.baud_rate_list"
-                            android:inputType="number"
-                            android:key="pref.adapter.connection.usb.baud_rate"
-                            android:summary="@string/pref.usb.baud_rate"
-                            android:title="@string/pref.usb.baud_rate"
-                            app:singleLineTitle="false"
-                            app:useSimpleSummaryProvider="true" />
-                    </PreferenceCategory>
-
-                    <PreferenceCategory
-                        android:key="pref.adapter.connection.type.wifi"
-                        android:title="@string/pref.wifi_category">
-
-                        <org.obd.graphs.preferences.WifiSSIDListPreferences
-                            android:dialogTitle="@string/pref.adapter_connection_tcp_ssid"
-                            android:key="pref.adapter.connection.tcp.ssid"
-                            android:title="@string/pref.adapter_connection_tcp_ssid"
-                            app:useSimpleSummaryProvider="true" />
-
-                        <EditTextPreference
-                            android:defaultValue="192.168.0.10"
-                            android:dialogTitle="@string/pref.adapter_connection_tcp_host"
-                            android:key="pref.adapter.connection.tcp.host"
-                            android:title="@string/pref.adapter_connection_tcp_host"
-                            app:useSimpleSummaryProvider="true" />
-
-                        <EditTextPreference
-                            android:defaultValue="35000"
-                            android:dialogTitle="Port"
-                            android:key="pref.adapter.connection.tcp.port"
-                            android:title="@string/pref.adapter_connection_tcp_port"
-                            app:useSimpleSummaryProvider="true" />
-                    </PreferenceCategory>
-                </PreferenceScreen>
+            <PreferenceCategory android:title="@string/pref.adapter.diagnostic_request_id.mapping.category">
+                <Preference
+                    android:key="pref.adapter.init.manage_dri"
+                    android:summary="@string/pref.adapter.diagnostic_request_id.manage_summary"
+                    android:title="@string/pref.adapter.diagnostic_request_id.manage_title"
+                    app:fragment="org.obd.graphs.preferences.dri.DiagnosticRequestIdFragment" />
             </PreferenceCategory>
-            <PreferenceCategory android:title="@string/pref.init_category">
-                <PreferenceScreen
-                    android:key="pref.init"
-                    android:summary="@string/pref.init_category_summary"
-                    android:title="@string/pref.settings"
-                    app:singleLineTitle="false">
+        </PreferenceScreen>
 
-                    <ListPreference
-                        android:defaultValue="500"
-                        android:entries="@array/pref.numbers_500_6000"
-                        android:entryValues="@array/pref.numbers_500_6000"
-                        android:inputType="number"
-                        android:key="pref.adapter.init.delay"
-                        android:title="@string/pref.adapter_init_delay"
-                        app:useSimpleSummaryProvider="true" />
+        <PreferenceScreen
+            android:key="pref.adapter"
+            android:summary="@string/pref_adapter_settings_summary"
+            android:title="@string/pref.adapter.general_settings"
+            app:singleLineTitle="false">
 
-                    <ListPreference
-                        android:defaultValue="0"
-                        android:entries="@array/pref.numbers_500_6000"
-                        android:entryValues="@array/pref.numbers_500_6000"
-                        android:inputType="number"
-                        android:key="pref.adapter.init.delay_after_reset"
-                        android:title="@string/pref.adapter_delay_reset"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <ListPreference
-                        android:defaultValue="AUTO"
-                        android:entries="@array/pref.init_protocol"
-                        android:entryValues="@array/pref.init_protocol"
-                        android:key="pref.adapter.init.protocol"
-                        android:title="@string/pref.adapter_init_protocol"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <ListPreference
-                        android:defaultValue="DEFAULT"
-                        android:entries="@array/pref.init_sequence"
-                        android:entryValues="@array/pref.init_sequence"
-                        android:key="pref.adapter.init.sequence"
-                        android:title="@string/pref.adapter_init_sequence"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <PreferenceCategory android:title="@string/pref.adapter.diagnostic_request_id.mapping.category">
-                        <Preference
-                            android:key="pref.adapter.init.manage_dri"
-                            android:title="@string/pref.adapter.diagnostic_request_id.manage_title"
-                            app:fragment="org.obd.graphs.preferences.dri.DiagnosticRequestIdFragment"
-                            android:summary="@string/pref.adapter.diagnostic_request_id.manage_summary" />
-                    </PreferenceCategory>
-                </PreferenceScreen>
-            </PreferenceCategory>
-
+            <org.obd.graphs.preferences.AdapterTypeListPreference
+                android:defaultValue="DEFAULT"
+                android:entries="@array/pref.adapter_type_entries"
+                android:entryValues="@array/pref.adapter_type_values"
+                android:key="pref.adapter.type"
+                android:title="@string/pref.adapter.type"
+                app:useSimpleSummaryProvider="true" />
 
             <PreferenceCategory android:title="@string/pref.adapter_error_handling">
-                <PreferenceScreen
-                    android:key="pref.adapter.errors"
-                    android:summary="@string/pref.adapter_error_handling_summary"
-                    android:title="@string/pref.settings">
+                <SwitchPreferenceCompat
+                    android:defaultValue="false"
+                    android:key="pref.adapter.error.continue_on_error"
+                    android:summary="@string/pref.adapter.error.continue_on_error_summary"
+                    android:title="@string/pref.adapter.error.continue_on_error"
+                    app:singleLineTitle="false" />
 
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:dialogTitle="@string/pref.adapter.error.continue_on_error"
-                        android:key="pref.adapter.error.continue_on_error"
-                        android:title="@string/pref.adapter.error.continue_on_error"
-                        android:summary="@string/pref.adapter.error.continue_on_error_summary"
-                        app:singleLineTitle="false" />
+                <SwitchPreferenceCompat
+                    android:defaultValue="true"
+                    android:key="pref.adapter.reconnect"
+                    android:summary="@string/pref.adapter_reconnect_summary"
+                    android:title="@string/pref.adapter_reconnect"
+                    app:singleLineTitle="false" />
 
-                    <SwitchPreferenceCompat
-                        android:defaultValue="true"
-                        android:dialogTitle="@string/pref.adapter_reconnect"
-                        android:key="pref.adapter.reconnect"
-                        android:title="@string/pref.adapter_reconnect"
-                        android:summary="@string/pref.adapter_reconnect_summary"
-                        app:singleLineTitle="false" />
-
-                    <ListPreference
-                        android:defaultValue="6"
-                        android:dialogTitle="@string/pref.adapter_reconnect_max_retry"
-                        android:entries="@array/pref.numbers_1_20"
-                        android:entryValues="@array/pref.numbers_1_20"
-                        android:inputType="number"
-                        android:key="pref.adapter.reconnect.max_retry"
-                        android:title="@string/pref.adapter_reconnect_max_retry"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-                </PreferenceScreen>
+                <ListPreference
+                    android:defaultValue="6"
+                    android:dialogTitle="@string/pref.adapter_reconnect_max_retry"
+                    android:entries="@array/pref.numbers_1_20"
+                    android:entryValues="@array/pref.numbers_1_20"
+                    android:inputType="number"
+                    android:key="pref.adapter.reconnect.max_retry"
+                    android:title="@string/pref.adapter_reconnect_max_retry"
+                    app:singleLineTitle="false"
+                    app:useSimpleSummaryProvider="true" />
             </PreferenceCategory>
 
             <PreferenceCategory android:title="@string/pref.adapter.batch_settings">
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
                     android:defaultValue="true"
-                    android:dialogTitle="@string/pref.adapter_batch_enabled"
                     android:key="pref.adapter.batch.enabled"
                     android:summary="@string/pref.adapter_batch_enabled_summary"
                     android:title="@string/pref.adapter_batch_enabled"
                     app:singleLineTitle="false" />
 
                 <org.obd.graphs.preferences.components.ExtendedSeekBar
-                    app:dependency="pref.adapter.batch.enabled"
                     android:defaultValue="8"
-                    android:dialogTitle="@string/pref.adapter_batch_mode_22_batch_size"
                     android:key="pref.adapter.batch.size"
                     android:max="24"
-                    android:title="@string/pref.adapter_batch_mode_22_batch_size"
                     android:summary="Batch Size for Mode 22"
+                    android:title="@string/pref.adapter_batch_mode_22_batch_size"
+                    app:dependency="pref.adapter.batch.enabled"
                     app:min="1"
                     app:showSeekBarValue="true"
                     app:singleLineTitle="false"
                     app:useSimpleSummaryProvider="true" />
-
 
                 <org.obd.graphs.preferences.components.ExtendedSeekBar
-                    app:dependency="pref.adapter.batch.enabled"
                     android:defaultValue="3"
-                    android:dialogTitle="@string/pref.adapter_batch_mode_01_batch_size"
                     android:key="pref.adapter.batch_01.size"
                     android:max="24"
-                    android:title="@string/pref.adapter_batch_mode_01_batch_size"
                     android:summary="Batch Size for Mode 01"
+                    android:title="@string/pref.adapter_batch_mode_01_batch_size"
+                    app:dependency="pref.adapter.batch.enabled"
                     app:min="1"
                     app:showSeekBarValue="true"
                     app:singleLineTitle="false"
                     app:useSimpleSummaryProvider="true" />
-
 
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
                     android:defaultValue="false"
-                    android:dialogTitle="@string/pref.adapter_batch_strict_validation_enabled"
                     android:key="pref.adapter.batch.strict_validation.enabled"
-                    android:title="@string/pref.adapter_batch_strict_validation_enabled"
                     android:summary="@string/pref.adapter_batch_strict_validation_enabled_summary"
+                    android:title="@string/pref.adapter_batch_strict_validation_enabled"
                     app:singleLineTitle="false" />
-
             </PreferenceCategory>
 
             <PreferenceCategory android:title="@string/pref.adapter.general_settings">
-
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
                     android:defaultValue="false"
-                    android:dialogTitle="@string/pref.adapter_stn_enabled"
                     android:key="pref.adapter.stn.enabled"
                     android:summary="@string/pref.adapter_stn_enabled_summary"
                     android:title="@string/pref.adapter_stn_enabled" />
 
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:dependency="pref.adapter.stn.enabled"
                     android:defaultValue="false"
-                    android:dialogTitle="@string/pref.adapter_stn_ignore_pids_priorities"
+                    android:dependency="pref.adapter.stn.enabled"
                     android:key="pref.adapter.stn.ignore_pids_priorities"
                     android:summary="@string/pref.adapter_stn_ignore_pids_priorities_summary"
                     android:title="@string/pref.adapter_stn_ignore_pids_priorities" />
 
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
                     android:defaultValue="false"
-                    android:dialogTitle="@string/pref.adapter_cache_result_enabled"
                     android:key="pref.adapter.cache.result.enabled"
                     android:summary="@string/pref.experimental_result_cache_enabled"
                     android:title="@string/pref.adapter_cache_result_enabled"
@@ -470,7 +299,6 @@
 
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
                     android:defaultValue="false"
-                    android:dialogTitle="@string/pref.adapter_calculation_response_frames_enabled"
                     android:key="pref.adapter.responseLength.enabled"
                     android:summary="@string/pref.adapter_calculation_response_frame_enabled_summary"
                     android:title="@string/pref.adapter_calculation_response_frames_enabled"
@@ -478,7 +306,6 @@
 
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
                     android:defaultValue="true"
-                    android:dialogTitle="@string/pref.adapter_graceful_stop_enabled"
                     android:key="pref.adapter.graceful_stop.enabled"
                     android:summary="@string/pref.adapter_graceful_stop_enabled_summary"
                     android:title="@string/pref.adapter_graceful_stop_enabled"
@@ -486,9 +313,8 @@
 
                 <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
                     android:defaultValue="false"
-                    android:dialogTitle="@string/pref.adapter_adaptive_enabled"
-                    android:summary="@string/pref.adapter_adaptive_enabled_summary"
                     android:key="pref.adapter.adaptive.enabled"
+                    android:summary="@string/pref.adapter_adaptive_enabled_summary"
                     android:title="@string/pref.adapter_adaptive_enabled" />
 
                 <ListPreference
@@ -505,60 +331,55 @@
         </PreferenceScreen>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/pref.alerting.category">
+    <PreferenceCategory android:title="@string/pref.registry.category">
         <PreferenceScreen
+            android:key="pref.registry"
+            android:summary="@string/pref_pid_registry_settings_summary"
             android:title="@string/pref.settings"
-            android:summary="@string/pref.alerting.category_summary"
-            app:key="pref.alerts.settings">
-
-            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                android:defaultValue="false"
-                android:key="pref.alerting.enabled"
-                android:summary="@string/pref.aa.alerting.enabled_summary"
-                android:title="@string/pref.aa.alerting.enabled"
-                app:singleLineTitle="false" />
-
-            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                android:defaultValue="false"
-                android:key="pref.alerting.legend.enabled"
-                android:summary="@string/pref.aa.alerting.legend.enabled_summary"
-                android:title="@string/pref.aa.alerting.legend.enabled"
-                app:singleLineTitle="false" />
+            app:singleLineTitle="false">
 
             <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                android:dialogTitle="@string/pref.pid.alert.edit_dialog"
+                android:dialogTitle="@string/pref.pid.manage_dialog"
                 android:key="pref.pids.edit"
-                android:summary="@string/pref.pid.alert.edit_dialog_summary"
-                android:title="@string/pref.pid.alert.edit_dialog"
+                android:summary="@string/pref.pid.manage_dialog_summary"
+                android:title="@string/pref.pid.manage_dialog"
                 app:singleLineTitle="false"
-                app:source="alert" />
+                app:source="edit" />
 
-        </PreferenceScreen>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/pref.vehicle_settings.category">
-        <PreferenceScreen
-            android:title="@string/pref.settings"
-            android:summary="@string/pref.vehicle_settings.category_summary"
-            app:key="pref.vehicle.settings">
-            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                android:defaultValue="58"
-                android:dialogTitle="@string/pref.vehicle_settings.fuel_tank_size"
-                android:key="pref.vehicle_settings.fuelTankSize"
-                android:max="80"
-                android:title="@string/pref.vehicle_settings.fuel_tank_size"
-                android:summary="@string/pref.vehicle_settings.fuel_tank_size_summary"
-                app:min="40"
-                app:showSeekBarValue="true"
-                app:singleLineTitle="false"
+            <org.obd.graphs.preferences.pid.ModulesListPreferences
+                android:dialogTitle="@string/pref.pids.registry.resource_list"
+                android:key="pref.pids.registry.list"
+                android:summary="@string/pref.pids.registry.resource.list_summary"
+                android:title="@string/pref.pids.registry.resource_list"
                 app:useSimpleSummaryProvider="true" />
 
-            <org.obd.graphs.preferences.BroadcastEventCheckBoxPreference
+            <SwitchPreferenceCompat
+                android:defaultValue="true"
+                android:key="pref.adapter.init.fetchSupportedPids"
+                android:summary="@string/pref.pids.group.enableCapabilitiesReadings_summary"
+                android:title="@string/pref.pids.group.enableCapabilitiesReadings"
+                app:singleLineTitle="false" />
+
+            <org.obd.graphs.preferences.pid.FilterBySupportedPIDsAction
                 android:defaultValue="false"
-                android:key="pref.vehicle_settings.vehicle_status_panel_enabled"
-                android:summary="@string/pref.vehicle_settings.vehicleStatusPanel_summary"
-                android:title="@string/pref.vehicle_settings.vehicleStatusPanel"
-                app:broadcastEvent="event.vehicle.status.CHANGED"
+                android:key="pref.pids.registry.filter_pids_ecu_supported"
+                android:summary="@string/pref.pids_display_only_ecu_supported_summary"
+                android:title="@string/pref.pids_display_only_ecu_supported"
+                app:singleLineTitle="false" />
+
+            <org.obd.graphs.preferences.pid.FilterByStablePIDsAction
+                android:defaultValue="false"
+                android:key="pref.pids.registry.filter_pids_stable"
+                android:summary="@string/pref.pids_display_only_stable_pids_summary"
+                android:title="@string/pref.pids_display_only_stable_pids"
+                app:singleLineTitle="false" />
+
+            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
+                android:defaultValue="false"
+                android:key="pref.pids.registry.access_external_storage"
+                android:summary="@string/pref.experimental_read_external_storage_enabled"
+                android:title="@string/pref.pids.registry.resource.external_storage"
+                app:enabled="@bool/FF_READ_RESOURCE_EXTERNAL_STORAGE_ENABLED"
                 app:experimental="true"
                 app:singleLineTitle="false" />
         </PreferenceScreen>
@@ -570,1696 +391,22 @@
             android:summary="@string/pref_vehicle_profile_settings_summary"
             android:title="@string/pref.settings"
             app:singleLineTitle="false">
-            <PreferenceCategory android:title="@string/pref.general_settings">
-                <org.obd.graphs.preferences.profile.ProfileListPreference
-                    android:key="pref.profile.id"
-                    android:title="@string/pref.profile.available_list"
-                    app:useSimpleSummaryProvider="true" />
 
-                <org.obd.graphs.preferences.profile.ProfileResetPreferenceAction
-                    android:key="pref.profile.reset"
-                    android:summary="@string/pref.profile.reset_summary"
-                    android:title="@string/pref.profile.reset" />
-
-                <org.obd.graphs.preferences.profile.ProfileSavePreferenceAction
-                    android:key="pref.profile.save_current"
-                    android:summary="@string/pref.profile.save_user_settings_summary"
-                    android:title="@string/pref.profile.save_user_settings" />
-
-                <org.obd.graphs.preferences.profile.ProfileNamePreference
-                    android:dialogTitle="@string/pref.profile.update_name"
-                    android:key="pref.profile.current_name"
-                    android:title="@string/pref.profile.update_name"
-                    app:useSimpleSummaryProvider="true" />
-
-                <EditTextPreference
-                    android:key="pref.profile.about"
-                    android:title="@string/pref.profile.about_title"
-                    app:enabled="false"
-                    app:useSimpleSummaryProvider="true" />
-            </PreferenceCategory>
-            <PreferenceCategory android:title="@string/pref.profile.backup.category">
-
-                <ListPreference
-                    android:defaultValue="Local"
-                    android:entries="@array/pref.backup.type"
-                    android:entryValues="@array/pref.backup.type"
-                    android:key="pref.backup.type"
-                    android:title="@string/pref.profile.backup.type"
-                    app:singleLineTitle="false"
-                    app:useSimpleSummaryProvider="true" />
-
-                <org.obd.graphs.preferences.profile.ProfileExportAction
-                    android:key="pref.backup.export"
-                    android:summary="@string/pref.profile.export_summary"
-                    android:title="@string/pref.profile.export"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.profile.ProfileRestoreAction
-                    android:key="pref.backup.import"
-                    android:summary="@string/pref.profile.restore_summary"
-                    android:title="@string/pref.profile.restore"
-                    app:singleLineTitle="false" />
-            </PreferenceCategory>
-
-        </PreferenceScreen>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/pref.vehicle.metadata_title">
-        <PreferenceScreen
-            android:key="pref.vehicle.properties"
-            android:summary="@string/pref_vehicle_metadata_summary"
-            android:title="@string/pref.settings"
-            app:singleLineTitle="false">
-            <PreferenceCategory android:title="@string/pref.vehicle.metadata_title">
-                <org.obd.graphs.preferences.metadata.VehicleMetadataListPreferences
-                    android:dialogTitle="@string/pref.vehicle.metadata_title"
-                    android:key="pref.vehicle.properties.list"
-                    android:summary="@string/pref_vehicle_metadata_summary"
-                    android:title="@string/pref.vehicle.metadata_title"
-                    app:singleLineTitle="false" />
-
-                <SwitchPreferenceCompat
-                    android:defaultValue="true"
-                    android:dialogTitle="@string/pref.pids.group.enableMetadataReadings"
-                    android:key="pref.adapter.init.fetchDeviceProperties"
-                    android:summary="@string/pref.pids.group.enableMetadataReadings_summary"
-                    android:title="@string/pref.pids.group.enableMetadataReadings"
-                    app:singleLineTitle="false" />
-
-            </PreferenceCategory>
-        </PreferenceScreen>
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:key="pref.dtc.category"
-        android:title="@string/pref.dtc.title">
-        <PreferenceScreen
-            android:key="pref.dtc"
-            android:summary="@string/pref.dtc.settings_summary"
-            android:title="@string/pref.settings"
-            app:singleLineTitle="false">
-            <PreferenceCategory android:title="@string/pref.dtc.title">
-                <org.obd.graphs.preferences.dtc.DiagnosticTroubleCodeListPreferences
-                    app:icon="@drawable/ic_action_execute"
-                    android:dialogTitle="@string/pref.dtc.title"
-                    android:key="pref.dtc.list"
-                    android:summary="@string/pref.dtc.settings_summary"
-                    android:title="@string/pref.dtc.settings"
-                    app:singleLineTitle="false" />
-
-                <SwitchPreferenceCompat
-                    android:defaultValue="false"
-                    android:dialogTitle="@string/pref.dtc.read_snapshots"
-                    android:key="pref.dtc.read_snapshots"
-                    android:summary="@string/pref.dtc.read_snapshots_summary"
-                    android:title="@string/pref.dtc.read_snapshots"
-                    app:singleLineTitle="false" />
-
-                <SwitchPreferenceCompat
-                    android:defaultValue="false"
-                    android:dialogTitle="@string/pref.dtc.enable_dtc_reading"
-                    android:key="pref.adapter.init.fetchDTC"
-                    android:summary="@string/pref.dtc.enable_dtc_reading_summary"
-                    android:title="@string/pref.dtc.enable_dtc_reading"
-                    app:singleLineTitle="false" />
-
-
-                <SwitchPreferenceCompat
-                    app:dependency="pref.adapter.init.fetchDTC"
-                    android:defaultValue="false"
-                    android:dialogTitle="@string/pref.dtc.enable_automatic_cleanup"
-                    android:key="pref.adapter.init.cleanDTC"
-                    android:summary="@string/pref.dtc.enable_automatic_cleanup_summary"
-                    android:title="@string/pref.dtc.enable_automatic_cleanup"
-                    app:singleLineTitle="false" />
-
-                <SwitchPreferenceCompat
-                    app:dependency="pref.adapter.init.fetchDTC"
-                    android:defaultValue="true"
-                    android:dialogTitle="@string/pref.dtc.notify_new_codes"
-                    android:key="pref.dtc.notify_new_codes"
-                    android:summary="@string/pref.dtc.notify_new_codes_summary"
-                    android:title="@string/pref.dtc.notify_new_codes"
-                    app:singleLineTitle="false" />
-
-            </PreferenceCategory>
-        </PreferenceScreen>
-    </PreferenceCategory>
-
-    <!-- Own category: readiness is generic OBD (mode 01), shown even when no DTC read PIDs are configured. -->
-    <PreferenceCategory
-        android:key="pref.readiness.category"
-        android:title="@string/pref.readiness.title">
-        <!-- Own screen so the menu can open it (pref.readiness), like pref.dtc. -->
-        <PreferenceScreen
-            android:key="pref.readiness"
-            android:summary="@string/pref.readiness.summary"
-            android:title="@string/pref.settings"
-            app:singleLineTitle="false">
-            <PreferenceCategory android:title="@string/pref.readiness.title">
-                <org.obd.graphs.preferences.readiness.ReadinessListPreferences
-                    app:icon="@drawable/ic_action_execute"
-                    android:dialogTitle="@string/pref.readiness.title"
-                    android:key="pref.readiness.list"
-                    android:summary="@string/pref.readiness.summary"
-                    android:title="@string/pref.readiness.settings"
-                    app:singleLineTitle="false" />
-            </PreferenceCategory>
-        </PreferenceScreen>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/pref.power_category">
-        <PreferenceScreen
-            android:key="pref.power"
-            android:summary="@string/pref_power_settings_summary"
-            android:title="@string/pref.settings"
-            app:singleLineTitle="false">
-
-            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                android:defaultValue="false"
-                android:key="pref.adapter.power.connect_adapter"
-                android:summary="@string/pref.adapter_power_connect_adapter_summary"
-                android:title="@string/pref.adapter_power_connect_adapter"
-                app:singleLineTitle="false" />
-
-            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                app:dependency="pref.adapter.power.connect_adapter"
-                android:defaultValue="3"
-                android:dialogTitle="@string/pref.adapter_power_start_data_logging_after"
-                android:key="pref.adapter.power.start_data_logging.after"
-                android:max="24"
-                android:title="@string/pref.adapter_power_start_data_logging_after"
-                android:summary="@string/pref.adapter_power_start_data_logging_after"
-                app:min="1"
-                app:showSeekBarValue="true"
-                app:singleLineTitle="false"
+            <org.obd.graphs.preferences.profile.ProfileListPreference
+                android:key="pref.profile.id"
+                android:title="@string/pref.profile.available_list"
                 app:useSimpleSummaryProvider="true" />
 
-
-            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                android:defaultValue="false"
-                android:key="pref.adapter.power.screen_off"
-                android:summary="@string/pref.adapter_power_screen_off_summary"
-                android:title="@string/pref.adapter_power_screen_off"
-                app:singleLineTitle="false" />
-
-            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                android:defaultValue="false"
-                android:dialogTitle="@string/pref.adapter_power_bt_off"
-                android:key="pref.adapter.power.switch_network_on_off"
-                android:summary="@string/pref.experimental_switch_network_enabled"
-                android:title="@string/pref.adapter_power_bt_off"
-                app:enabled="@bool/FF_SWITCH_NETWORK_ENABLED" />
-
-
-        </PreferenceScreen>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/pref.view_category">
-
-        <PreferenceScreen
-            android:key="pref.views"
-            android:summary="@string/pref.view_category_summary"
-            android:title="@string/pref.settings">
-
-            <SwitchPreferenceCompat
-                android:defaultValue="true"
-                android:key="pref.views.navigation.navigate_last_visited_view"
-                android:summary="@string/pref.view.navigation.navigate_to_last_visited_view_summary"
-                android:title="@string/pref.view.navigation.navigate_to_last_visited_view"
-                app:broadcastEvent="navigation.buttons.changes.event"
-                app:singleLineTitle="false" />
-
-            <PreferenceScreen
-                android:summary="@string/pref.gauge.category"
-                android:title="@string/navigation.title_gauge"
-                app:key="pref.gauge">
-
-                <PreferenceCategory android:title="@string/pref.pids_category">
-                    <PreferenceScreen
-                        android:key="pref.gauge.displayed_parameter_ids"
-                        android:summary="@string/pref.displayed_parameter_ids_summary"
-                        android:title="@string/pref.displayed_parameter_ids">
-                        <PreferenceCategory android:title="@string/pref.pids_category">
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.gauge.pids.selected"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.displayed_parameter_ids"
-                                app:source="gauge"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.general_settings">
-                    <org.obd.graphs.preferences.BroadcastEventCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.gauge.view.enabled"
-                        android:summary="@string/pref.enable_view_summary"
-                        android:title="@string/pref.enable_view"
-                        app:broadcastEvent="navigation.buttons.changes.event"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedSeekBar
-                        android:defaultValue="2"
-                        android:dialogTitle="@string/pref.gauge.number_of_columns"
-                        android:key="pref.gauge.max_columns"
-                        android:max="10"
-                        android:title="@string/pref.gauge.number_of_columns"
-                        app:min="1"
-                        app:showSeekBarValue="true"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <org.obd.graphs.preferences.components.ExtendedSeekBar
-                        android:defaultValue="42"
-                        android:dialogTitle="@string/pref.gauge.font_size"
-                        android:key="pref.gauge.font_size"
-                        android:max="60"
-                        android:title="@string/pref.gauge.font_size"
-                        app:min="10"
-                        app:showSeekBarValue="true"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.gauge_scrollbar_enabled"
-                        android:title="@string/pref.gauge_display_scrollbar"
-                        app:singleLineTitle="false" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.gauge_display_command_rate"
-                        android:title="@string/pref.gauge_display_refresh_rate"
-                        app:singleLineTitle="false" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="true"
-                        android:key="pref.gauge_display_scale"
-                        android:title="@string/pref.gauge_display_scale"
-                        app:singleLineTitle="false" />
-
-                    <ListPreference
-                        android:defaultValue="10"
-                        android:dialogTitle="@string/pref.screen.fps"
-                        android:entries="@array/pref.numbers_1_25"
-                        android:entryValues="@array/pref.numbers_1_25"
-                        android:inputType="number"
-                        android:key="pref.gauge.fps"
-                        android:title="@string/pref.screen.fps"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.theme">
-                    <com.kizitonwose.colorpreferencecompat.ColorPreferenceCompat
-
-                        app:colorChoices="@array/gauge_colors"
-                        android:defaultValue="@android:color/holo_red_light"
-                        android:key="pref.gauge_background_color"
-                        android:title="@string/pref.gauge_background_color" />
-                </PreferenceCategory>
-
-            </PreferenceScreen>
-
-            <PreferenceScreen
-                android:summary="@string/pref.performance_category"
-                android:title="@string/navigation.title_performance"
-                app:key="pref.performance">
-
-                <org.obd.graphs.preferences.BroadcastEventCheckBoxPreference
-                    android:defaultValue="true"
-                    android:key="pref.performance.view.enabled"
-                    android:summary="@string/pref.enable_view_summary"
-                    android:title="@string/pref.enable_view"
-                    app:broadcastEvent="navigation.buttons.changes.event"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.components.ExtendedSeekBar
-                    android:defaultValue="30"
-                    android:dialogTitle="@string/pref.drag_racing.font_size"
-                    android:key="pref.performance.screen_font_size"
-                    android:max="70"
-                    android:title="@string/pref.drag_racing.font_size"
-                    app:min="22"
-                    app:showSeekBarValue="true"
-                    app:singleLineTitle="false"
-                    app:useSimpleSummaryProvider="true" />
-
-                <org.obd.graphs.preferences.components.ExtendedSeekBar
-                    android:defaultValue="22"
-                    android:dialogTitle="@string/pref.performance.screen_label_y_padding"
-                    android:key="pref.performance.screen_label_y_padding"
-                    android:max="34"
-                    android:title="@string/pref.performance.screen_label_y_padding"
-                    app:min="-60"
-                    app:showSeekBarValue="true"
-                    app:singleLineTitle="false"
-                    app:useSimpleSummaryProvider="true" />
-
-                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:defaultValue="true"
-                    android:key="pref.performance.brake_boosting.enabled"
-                    android:title="@string/pref.aa.performance.brake_boosting.enabled"
-                    android:summary="@string/pref.aa.performance.brake_boosting.enabled_summary"
-                    app:singleLineTitle="false" />
-
-
-            </PreferenceScreen>
-
-            <PreferenceScreen
-                android:summary="@string/pref.trip_info_category"
-                android:title="@string/navigation.title_trip_info"
-                app:key="pref.trip_info">
-
-                <org.obd.graphs.preferences.BroadcastEventCheckBoxPreference
-                    android:defaultValue="true"
-                    android:key="pref.trip_info.view.enabled"
-                    android:summary="@string/pref.enable_view_summary"
-                    android:title="@string/pref.enable_view"
-                    app:broadcastEvent="navigation.buttons.changes.event"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.components.ExtendedSeekBar
-                    android:defaultValue="30"
-                    android:dialogTitle="@string/pref.drag_racing.font_size"
-                    android:key="pref.trip_info.screen_font_size"
-                    android:max="70"
-                    android:title="@string/pref.drag_racing.font_size"
-                    app:min="22"
-                    app:showSeekBarValue="true"
-                    app:singleLineTitle="false"
-                    app:useSimpleSummaryProvider="true" />
-            </PreferenceScreen>
-
-            <PreferenceScreen
-                android:summary="@string/pref.drag_racing_category"
-                android:title="@string/navigation.title_drag_racing"
-                app:key="pref.drag_racing">
-
-                <org.obd.graphs.preferences.BroadcastEventCheckBoxPreference
-                    android:defaultValue="true"
-                    android:key="pref.drag_racing.view.enabled"
-                    android:summary="@string/pref.enable_view_summary"
-                    android:title="@string/pref.enable_view"
-                    app:broadcastEvent="navigation.buttons.changes.event"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.components.ExtendedSeekBar
-                    android:defaultValue="30"
-                    android:dialogTitle="@string/pref.drag_racing.font_size"
-                    android:key="pref.drag_racing.screen_font_size"
-                    android:max="70"
-                    android:title="@string/pref.drag_racing.font_size"
-                    app:min="22"
-                    app:showSeekBarValue="true"
-                    app:singleLineTitle="false"
-                    app:useSimpleSummaryProvider="true" />
-
-                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="pref.drag_racing.shift_lights.enabled"
-                    android:summary="@string/pref.aa.performance_meter.shift_lights_enabled_summary"
-                    android:title="@string/pref.aa.performance_meter.shift_lights_enabled"
-                    app:experimental="true"
-                    app:singleLineTitle="false" />
-
-                <ListPreference
-                    android:defaultValue="5000"
-                    android:entries="@array/pref.numbers_4500_5000"
-                    android:entryValues="@array/pref.numbers_4500_5000"
-                    android:inputType="number"
-                    android:key="pref.drag_racing.shift_lights.rev_value"
-                    android:summary="@string/ref.aa.performance_meter.shift_lights.rev"
-                    android:title="@string/ref.aa.performance_meter.shift_lights.rev"
-                    app:singleLineTitle="false"
-                    app:useSimpleSummaryProvider="true" />
-
-                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:defaultValue="true"
-                    android:key="pref.drag_racing.metrics_reading.display_frequency.enabled"
-                    android:title="@string/pref.aa.performance_meter.display_frequency"
-                    app:singleLineTitle="false" />
-
-
-                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:defaultValue="true"
-                    android:key="pref.drag_racing.metrics_reading.enabled"
-                    android:title="@string/pref.aa.performance_meter.display_context_metrics"
-                    android:summary="@string/pref.aa.performance_meter.display_context_metrics_summary"
-                    app:singleLineTitle="false" />
-
-                <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="pref.profile.2_0_GME_extension.enabled"
-                    android:summary="@string/pref.profile.2_0_GME_extension.enabled_summary"
-                    android:title="@string/pref.profile.2_0_GME_extension.enabled"
-                    app:experimental="false"
-                    app:singleLineTitle="false" />
-
-
-            </PreferenceScreen>
-
-            <PreferenceScreen
-                android:summary="@string/pref.giulia_category"
-                android:title="@string/navigation.title_giulia"
-                app:key="pref.giulia">
-
-                <PreferenceCategory android:title="@string/pref.general_settings">
-
-                    <org.obd.graphs.preferences.BroadcastEventCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.giulia.view.enabled"
-                        android:summary="@string/pref.enable_view_summary"
-                        android:title="@string/pref.enable_view"
-                        app:broadcastEvent="navigation.buttons.changes.event"
-                        app:singleLineTitle="false" />
-
-                    <ListPreference
-                        android:defaultValue="5"
-                        android:dialogTitle="@string/pref.screen.fps"
-                        android:entries="@array/pref.numbers_1_25"
-                        android:entryValues="@array/pref.numbers_1_25"
-                        android:inputType="number"
-                        android:key="pref.giulia.fps"
-                        android:title="@string/pref.screen.fps"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.pids_category">
-                    <PreferenceScreen
-                        android:key="pref.giulia.displayed_parameter_ids"
-                        android:summary="@string/pref.displayed_parameter_ids_summary"
-                        android:title="@string/pref.displayed_parameter_ids">
-                        <PreferenceCategory android:title="@string/pref.pids_category">
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.giulia.pids.selected"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.displayed_parameter_ids"
-                                app:source="giulia"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory
-                    android:title="@string/pref.giulia.virtual_screens.number_of_items_in_column.category"
-                    app:singleLineTitle="false">
-                    <PreferenceScreen
-                        android:key="pref.aa.number_of_items_in_column.category"
-                        android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.category"
-                        app:singleLineTitle="false">
-                        <PreferenceCategory
-                            android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.category"
-                            app:singleLineTitle="false">
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.1"
-                                android:key="pref.giulia.max_pids_in_column.1"
-                                android:max="4"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.1"
-                                app:min="1"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.2"
-                                android:key="pref.giulia.max_pids_in_column.2"
-                                android:max="4"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.2"
-                                app:min="1"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.3"
-                                android:key="pref.giulia.max_pids_in_column.3"
-                                android:max="4"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.3"
-                                app:min="1"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.4"
-                                android:key="pref.giulia.max_pids_in_column.4"
-                                android:max="4"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.4"
-                                app:min="1"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.5"
-                                android:key="pref.giulia.max_pids_in_column.5"
-                                android:max="4"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.5"
-                                app:min="1"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.6"
-                                android:key="pref.giulia.max_pids_in_column.6"
-                                android:max="4"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.6"
-                                app:min="1"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.7"
-                                android:key="pref.giulia.max_pids_in_column.7"
-                                android:max="4"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.7"
-                                app:min="1"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.virtual_screens.font_size.category.summary"
-                    app:singleLineTitle="false">
-                    <PreferenceScreen
-                        android:key="pref.giulia.screen.font_size.category"
-                        android:title="@string/pref.aa.virtual_screens.font_size.category"
-                        app:singleLineTitle="false">
-                        <PreferenceCategory
-                            android:title="@string/pref.aa.virtual_screens.font_size.category"
-                            app:singleLineTitle="false">
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="52"
-                                android:dialogTitle="@string/pref.aa.font_size.1"
-                                android:key="pref.giulia.screen_font_size.1"
-                                android:max="80"
-                                android:title="@string/pref.aa.font_size.1"
-                                app:min="30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="52"
-                                android:dialogTitle="@string/pref.aa.font_size.2"
-                                android:key="pref.giulia.screen_font_size.2"
-                                android:max="80"
-                                android:title="@string/pref.aa.font_size.2"
-                                app:min="30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="52"
-                                android:dialogTitle="@string/pref.aa.font_size.3"
-                                android:key="pref.giulia.screen_font_size.3"
-                                android:max="80"
-                                android:title="@string/pref.aa.font_size.3"
-                                app:min="30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="52"
-                                android:dialogTitle="@string/pref.aa.font_size.4"
-                                android:key="pref.giulia.screen_font_size.4"
-                                android:max="80"
-                                android:title="@string/pref.aa.font_size.4"
-                                app:min="30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="52"
-                                android:dialogTitle="@string/pref.aa.font_size.5"
-                                android:key="pref.giulia.screen_font_size.5"
-                                android:max="80"
-                                android:title="@string/pref.aa.font_size.5"
-                                app:min="30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="52"
-                                android:dialogTitle="@string/pref.aa.font_size.6"
-                                android:key="pref.giulia.screen_font_size.6"
-                                android:max="80"
-                                android:title="@string/pref.aa.font_size.6"
-                                app:min="30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="52"
-                                android:dialogTitle="@string/pref.aa.font_size.7"
-                                android:key="pref.giulia.screen_font_size.7"
-                                android:max="80"
-                                android:title="@string/pref.aa.font_size.7"
-                                app:min="30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-            </PreferenceScreen>
-
-
-            <PreferenceScreen
-                android:summary="@string/pref.aa.category"
-                android:title="@string/navigation.title_aa"
-                app:isPreferenceVisible="@bool/MODULE_ANDROID_AUTO_ENABLED"
-                app:key="pref.aa">
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.general_category"
-                    app:singleLineTitle="false">
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="true"
-                        android:key="pref.aa.connect_dialog.enabled"
-                        android:title="@string/pref.aa.connect_dialog.enabled"
-                        app:singleLineTitle="false" />
-
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.aa.screen.load_last_visited.enabled"
-                        android:title="@string/pref.aa.screen.load_last_visited.enabled"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.virtual_screens.status_panel.enabled"
-                        android:title="@string/pref.aa.display_status_panel"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedSeekBar
-                        android:defaultValue="6"
-                        android:dialogTitle="@string/pref.aa.virtual_screens.screen.max_items"
-                        android:key="pref.aa.virtual_screens.screen.max_items"
-                        android:max="12"
-                        android:title="@string/pref.aa.virtual_screens.screen.max_items"
-                        app:min="1"
-                        app:showSeekBarValue="true"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-
-                    <ListPreference
-                        android:defaultValue="5"
-                        android:dialogTitle="@string/pref.screen.fps"
-                        android:entries="@array/pref.numbers_1_25"
-                        android:entryValues="@array/pref.numbers_1_25"
-                        android:inputType="number"
-                        android:key="pref.aa.surface.fps"
-                        android:title="@string/pref.screen.fps"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="false"
-                        android:key="pref.aa.virtual_screens.sort_order.enabled"
-                        android:summary="@string/pref.aa.virtual_screens.sort_order.enabled_summary"
-                        android:title="@string/pref.aa.virtual_screens.sort_order.enabled"
-                        app:experimental="true"
-                        app:singleLineTitle="false" />
-                </PreferenceCategory>
-
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.general_views_category"
-                    app:singleLineTitle="false">
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.virtual_screens.scale.enabled"
-                        android:title="@string/pref.aa.display_pid_scale"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="false"
-                        android:key="pref.aa.pids.history.enabled"
-                        android:title="@string/pref.aa.display_pid_history"
-                        app:singleLineTitle="false" />
-                </PreferenceCategory>
-
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.gauge.category"
-                    app:singleLineTitle="false">
-                    <org.obd.graphs.preferences.components.ExtendedListPreference
-                        android:defaultValue="LONG"
-                        android:dialogTitle="@string/pref.aa.renderer.gauge.progress_type"
-                        android:entries="@array/pref.aa.gauge.progress_type"
-                        android:entryValues="@array/pref.aa.gauge.progress_type"
-                        android:key="pref.aa.virtual_screens.screen.gauge.progress_type"
-                        android:title="@string/pref.aa.renderer.gauge.progress_type"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-
-                    <PreferenceScreen
-                        android:key="pref.aa.screen.gauge.top_offset.category"
-                        android:summary="@string/pref.aa.renderer.gauge.top_offset_summary"
-                        android:title="@string/pref.aa.renderer.gauge.top_offset"
-                        app:singleLineTitle="false">
-                        <PreferenceCategory
-                            android:title="@string/pref.aa.renderer.gauge.top_offset"
-
-                            app:singleLineTitle="false">
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="0"
-                                android:dialogTitle="@string/pref.aa.renderer.gauge.top_offset"
-                                android:key="pref.aa.virtual_screens.gauge.top_offset.1"
-                                android:max="80"
-                                android:title="@string/pref.aa.renderer.gauge.top_offset.1"
-                                app:min="-30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="0"
-                                android:dialogTitle="@string/pref.aa.renderer.gauge.top_offset"
-                                android:key="pref.aa.virtual_screens.gauge.top_offset.2"
-                                android:max="80"
-                                android:title="@string/pref.aa.renderer.gauge.top_offset.2"
-                                app:min="-30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="0"
-                                android:dialogTitle="@string/pref.aa.renderer.gauge.top_offset"
-                                android:key="pref.aa.virtual_screens.gauge.top_offset.3"
-                                android:max="80"
-                                android:title="@string/pref.aa.renderer.gauge.top_offset.3"
-                                app:min="-30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="0"
-                                android:dialogTitle="@string/pref.aa.renderer.gauge.top_offset"
-                                android:key="pref.aa.virtual_screens.gauge.top_offset.4"
-                                android:max="80"
-                                android:title="@string/pref.aa.renderer.gauge.top_offset.4"
-                                app:min="-30"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-
-
-                    <PreferenceScreen
-                        android:key="pref.aa.gauge.displayed.pids"
-                        android:summary="@string/pref.aa.gauge.displayed_parameter_ids_summary"
-                        android:title="@string/pref.aa.gauge.displayed_parameter_ids"
-                        app:singleLineTitle="false">
-
-                        <PreferenceCategory
-                            android:title="@string/pref.displayed_parameter_ids_summary"
-                            app:singleLineTitle="false">
-
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.gauge.pids.profile_1"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.aa.profile_1.displayed_parameter_ids"
-                                app:source="aa"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.gauge.pids.profile_2"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.aa.profile_2.displayed_parameter_ids"
-                                app:source="aa"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.gauge.pids.profile_3"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.aa.profile_3.displayed_parameter_ids"
-                                app:source="aa"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.gauge.pids.profile_4"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.aa.profile_4.displayed_parameter_ids"
-                                app:source="aa"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                    <PreferenceScreen
-                        android:key="pref.aa.gauge.screen.font_size.category"
-                        android:summary="@string/pref.aa.virtual_screens.font_size.category.summary"
-                        android:title="@string/pref.aa.virtual_screens.font_size.category"
-                        app:singleLineTitle="false">
-                        <PreferenceCategory
-                            android:title="@string/pref.aa.virtual_screens.font_size.category"
-                            app:singleLineTitle="false">
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="32"
-                                android:dialogTitle="@string/pref.aa.font_size.1"
-                                android:key="pref.aa.gauge.screen_font_size.1"
-                                android:max="74"
-                                android:title="@string/pref.aa.font_size.1"
-                                app:min="20"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="32"
-                                android:dialogTitle="@string/pref.aa.font_size.2"
-                                android:key="pref.aa.gauge.screen_font_size.2"
-                                android:max="74"
-                                android:title="@string/pref.aa.font_size.2"
-                                app:min="20"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="32"
-                                android:dialogTitle="@string/pref.aa.font_size.3"
-                                android:key="pref.aa.gauge.screen_font_size.3"
-                                android:max="74"
-                                android:title="@string/pref.aa.font_size.3"
-                                app:min="20"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="32"
-                                android:dialogTitle="@string/pref.aa.font_size.4"
-                                android:key="pref.aa.gauge.screen_font_size.4"
-                                android:max="74"
-                                android:title="@string/pref.aa.font_size.4"
-                                app:min="20"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.virtual_screens.category"
-                    app:singleLineTitle="false">
-
-
-                    <PreferenceScreen
-                        android:key="pref.aa.displayed.pids"
-                        android:summary="@string/pref.aa.giulia.displayed_parameter_ids_summary"
-                        android:title="@string/pref.aa.giulia.displayed_parameter_ids"
-                        app:singleLineTitle="false">
-
-                        <PreferenceCategory
-                            android:title="@string/pref.displayed_parameter_ids_summary"
-                            app:singleLineTitle="false">
-
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.pids.profile_1"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.aa.profile_1.displayed_parameter_ids"
-                                app:source="aa"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.pids.profile_2"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.aa.profile_2.displayed_parameter_ids"
-                                app:source="aa"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.pids.profile_3"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.aa.profile_3.displayed_parameter_ids"
-                                app:source="aa"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.pids.profile_4"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.aa.profile_4.displayed_parameter_ids"
-                                app:source="aa"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-
-
-                    <PreferenceScreen
-                        android:key="pref.aa.screen.font_size.category"
-                        android:summary="@string/pref.aa.virtual_screens.font_size.category.summary"
-                        android:title="@string/pref.aa.virtual_screens.font_size.category"
-                        app:singleLineTitle="false">
-                        <PreferenceCategory
-                            android:title="@string/pref.aa.virtual_screens.font_size.category"
-                            app:singleLineTitle="false">
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="32"
-                                android:dialogTitle="@string/pref.aa.font_size.1"
-                                android:key="pref.aa.screen_font_size.1"
-                                android:max="74"
-                                android:title="@string/pref.aa.font_size.1"
-                                app:min="20"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="32"
-                                android:dialogTitle="@string/pref.aa.font_size.2"
-                                android:key="pref.aa.screen_font_size.2"
-                                android:max="74"
-                                android:title="@string/pref.aa.font_size.2"
-                                app:min="20"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="32"
-                                android:dialogTitle="@string/pref.aa.font_size.3"
-                                android:key="pref.aa.screen_font_size.3"
-                                android:max="74"
-                                android:title="@string/pref.aa.font_size.3"
-                                app:min="20"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedSeekBar
-                                android:defaultValue="32"
-                                android:dialogTitle="@string/pref.aa.font_size.4"
-                                android:key="pref.aa.screen_font_size.4"
-                                android:max="74"
-                                android:title="@string/pref.aa.font_size.4"
-                                app:min="20"
-                                app:showSeekBarValue="true"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-
-
-                    <PreferenceScreen
-                        android:key="pref.aa.screen.columns.category"
-                        android:summary="@string/pref.aa.virtual_screens.number_of_items_in_column.category.summary"
-                        android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.category"
-                        app:singleLineTitle="false">
-
-                        <PreferenceCategory
-                            android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.category"
-
-                            app:singleLineTitle="false">
-                            <org.obd.graphs.preferences.components.ExtendedListPreference
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.1"
-                                android:entries="@array/pref.numbers_1_2"
-                                android:entryValues="@array/pref.numbers_1_2"
-                                android:key="pref.aa.max_pids_in_column.1"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.1"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedListPreference
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.2"
-                                android:entries="@array/pref.numbers_1_2"
-                                android:entryValues="@array/pref.numbers_1_2"
-                                android:key="pref.aa.max_pids_in_column.2"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.2"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <org.obd.graphs.preferences.components.ExtendedListPreference
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.3"
-                                android:entries="@array/pref.numbers_1_2"
-                                android:entryValues="@array/pref.numbers_1_2"
-                                android:key="pref.aa.max_pids_in_column.3"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.3"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedListPreference
-                                android:defaultValue="1"
-                                android:dialogTitle="@string/pref.aa.virtual_screens.number_of_items_in_column.4"
-                                android:entries="@array/pref.numbers_1_2"
-                                android:entryValues="@array/pref.numbers_1_2"
-                                android:key="pref.aa.max_pids_in_column.4"
-                                android:title="@string/pref.aa.virtual_screens.number_of_items_in_column.4"
-                                app:singleLineTitle="false"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-
-                    <PreferenceScreen
-                        android:key="pref.aa.virtual_screens.split_pids_labels.category"
-                        android:summary="@string/pref.aa.virtual_screens.split_pids_labels.category.summary"
-                        android:title="@string/pref.aa.virtual_screens.split_pids_labels.category"
-                        app:singleLineTitle="false">
-
-                        <PreferenceCategory
-                            android:title="@string/pref.aa.virtual_screens.split_pids_labels.category"
-                            app:singleLineTitle="false">
-
-                            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                                android:defaultValue="false"
-                                android:key="pref.aa.break_label.1"
-                                android:summary="@string/pref.aa.virtual_screens.split_pids_labels.1"
-                                android:title="@string/pref.aa.virtual_screens.split_pids_labels.1"
-                                app:singleLineTitle="false" />
-
-                            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                                android:defaultValue="false"
-                                android:key="pref.aa.break_label.2"
-                                android:summary="@string/pref.aa.virtual_screens.split_pids_labels.2"
-                                android:title="@string/pref.aa.virtual_screens.split_pids_labels.2"
-                                app:singleLineTitle="false" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                                android:defaultValue="false"
-                                android:key="pref.aa.break_label.3"
-                                android:summary="@string/pref.aa.virtual_screens.split_pids_labels.3"
-                                android:title="@string/pref.aa.virtual_screens.split_pids_labels.3"
-                                app:singleLineTitle="false" />
-
-
-                            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                                android:defaultValue="false"
-                                android:key="pref.aa.break_label.4"
-                                android:summary="@string/pref.aa.virtual_screens.split_pids_labels.4"
-                                android:title="@string/pref.aa.virtual_screens.split_pids_labels.4"
-                                app:singleLineTitle="false" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-
-
-                    <PreferenceScreen
-                        android:key="pref.aa.virtual_screens_category_visibility"
-                        android:summary="@string/pref.aa.virtual_screens.visibility.category.summary"
-                        android:title="@string/pref.aa.virtual_screens.visibility.category"
-                        app:singleLineTitle="false">
-
-                        <PreferenceCategory
-                            android:title="@string/pref.aa.virtual_screens.visibility.category"
-                            app:singleLineTitle="false">
-
-                            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                                android:defaultValue="true"
-                                android:key="pref.aa.virtual_screens.enabled.1"
-                                android:summary="@string/pref.aa.virtual_screens.visibility.1"
-                                android:title="@string/pref.aa.virtual_screens.visibility.1"
-                                app:singleLineTitle="false" />
-
-                            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                                android:defaultValue="true"
-                                android:key="pref.aa.virtual_screens.enabled.2"
-                                android:summary="@string/pref.aa.virtual_screens.visibility.2"
-                                android:title="@string/pref.aa.virtual_screens.visibility.2"
-                                app:singleLineTitle="false" />
-
-                            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                                android:defaultValue="true"
-                                android:key="pref.aa.virtual_screens.enabled.3"
-                                android:summary="@string/pref.aa.virtual_screens.visibility.3"
-                                android:title="@string/pref.aa.virtual_screens.visibility.3"
-                                app:singleLineTitle="false" />
-
-                            <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                                android:defaultValue="true"
-                                android:key="pref.aa.virtual_screens.enabled.4"
-                                android:summary="@string/pref.aa.virtual_screens.visibility.4"
-                                android:title="@string/pref.aa.virtual_screens.visibility.4"
-                                app:singleLineTitle="false" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.routines.category"
-                    app:singleLineTitle="false">
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.routines.enabled"
-                        android:summary="@string/pref.aa.routines.enabled.enabled_summary"
-                        android:title="@string/pref.aa.routines.enabled"
-                        app:singleLineTitle="false" />
-
-                </PreferenceCategory>
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.dtc.category"
-                    app:singleLineTitle="false">
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.dtc.enabled"
-                        android:summary="@string/pref.aa.dtc.enabled_summary"
-                        android:title="@string/pref.aa.dtc.enabled"
-                        app:singleLineTitle="false" />
-
-                </PreferenceCategory>
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.trip_info.category"
-                    app:singleLineTitle="false">
-
-                    <org.obd.graphs.preferences.components.ExtendedSeekBar
-                        android:defaultValue="30"
-                        android:dialogTitle="@string/pref.aa.virtual_screens.font_size.category"
-                        android:key="pref.aa.trip_info.font_size"
-                        android:max="72"
-                        android:title="@string/pref.aa.virtual_screens.font_size.category"
-                        app:min="22"
-                        app:showSeekBarValue="true"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.trip_info.enabled"
-                        android:title="@string/pref.aa.trip_info.enabled"
-                        android:summary="@string/pref.aa.trip_info.enabled_summary"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.trip_info.break_label"
-                        android:title="@string/pref.aa.trip_info.break_label"
-                        android:summary="@string/pref.aa.trip_info.break_label_summary"
-                        app:singleLineTitle="false" />
-
-
-                    <PreferenceScreen
-                        android:key="pref.trip_info.displayed_parameter_ids"
-                        android:summary="@string/pref.displayed_parameter_ids_summary"
-                        android:title="@string/pref.displayed_parameter_ids">
-                        <PreferenceCategory android:title="@string/pref.pids_category">
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.trip_info.pids.selected"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.displayed_parameter_ids"
-                                app:source="trip_info"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <!-- No defaultValue: an unset key means the default bottom row. -->
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:dialogTitle="@string/pref.aa.trip_info.bottom_pids"
-                                android:key="pref.aa.trip_info.bottom.pids.selected"
-                                android:summary="@string/pref.aa.trip_info.bottom_pids_summary"
-                                android:title="@string/pref.aa.trip_info.bottom_pids"
-                                app:source="trip_info_bottom"
-                                app:singleLineTitle="false" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.performance.category"
-                    app:singleLineTitle="false">
-
-                    <org.obd.graphs.preferences.components.ExtendedSeekBar
-                        android:defaultValue="30"
-                        android:dialogTitle="@string/pref.aa.virtual_screens.font_size.category"
-                        android:key="pref.aa.performance.font_size"
-                        android:max="72"
-                        android:title="@string/pref.aa.virtual_screens.font_size.category"
-                        app:min="22"
-                        app:showSeekBarValue="true"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.performance.enabled"
-                        android:title="@string/pref.aa.performance.enabled"
-                        android:summary="@string/pref.aa.performance.enabled_summary"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.performance.break_label"
-                        android:title="@string/pref.aa.performance.break_label"
-                        android:summary="@string/pref.aa.performance.break_label_summary"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.performance.break_boosting.enabled"
-                        android:title="@string/pref.aa.performance.brake_boosting.enabled"
-                        android:summary="@string/pref.aa.performance.brake_boosting.enabled_summary"
-                        app:singleLineTitle="false" />
-
-
-                    <PreferenceScreen
-                        android:key="pref.performance.displayed_parameter_ids"
-                        android:summary="@string/pref.aa.performance.displayed_parameter_ids_summary"
-                        android:title="@string/pref.aa.performance.displayed_parameter_ids">
-                        <PreferenceCategory android:title="@string/pref.pids_category">
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.aa.performance.pids.selected"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.displayed_parameter_ids"
-                                app:source="performance"
-                                app:useSimpleSummaryProvider="true" />
-
-                            <!-- No defaultValue: an unset key means the profile's gauges. -->
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:dialogTitle="@string/pref.aa.performance.bottom_pids"
-                                android:key="pref.aa.performance.bottom.pids.selected"
-                                android:summary="@string/pref.aa.performance.bottom_pids_summary"
-                                android:title="@string/pref.aa.performance.bottom_pids"
-                                app:source="performance_bottom"
-                                app:singleLineTitle="false" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-
-
-                </PreferenceCategory>
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.performance_meter.category"
-                    app:singleLineTitle="false">
-
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        app:enabled="@bool/FF_SHIFT_LIGHTS_ENABLED"
-                        android:defaultValue="false"
-                        android:key="pref.aa.drag_race.shift_lights.enabled"
-                        android:summary="@string/pref.aa.performance_meter.shift_lights_enabled_summary"
-                        android:title="@string/pref.aa.performance_meter.shift_lights_enabled"
-                        app:experimental="true"
-                        app:singleLineTitle="false" />
-
-                    <ListPreference
-                        app:enabled="@bool/FF_SHIFT_LIGHTS_ENABLED"
-                        android:defaultValue="5000"
-                        android:entries="@array/pref.numbers_4500_5000"
-                        android:entryValues="@array/pref.numbers_4500_5000"
-                        android:inputType="number"
-                        android:key="pref.aa.drag_race.shift_lights.rev_value"
-                        android:summary="@string/ref.aa.performance_meter.shift_lights.rev"
-                        android:title="@string/ref.aa.performance_meter.shift_lights.rev"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.drag_race.vehicle_speed.enabled"
-                        android:summary="@string/pref.aa.performance_meter.display_context_metrics_summary"
-                        android:title="@string/pref.aa.performance_meter.display_context_metrics"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="false"
-                        android:key="pref.profile.2_0_GME_extension.enabled"
-                        android:summary="@string/pref.profile.2_0_GME_extension.enabled_summary"
-                        android:title="@string/pref.profile.2_0_GME_extension.enabled"
-                        app:experimental="false"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.drag_race.break_boosting.enabled"
-                        android:title="@string/pref.aa.drag_race.brake_boosting.enabled"
-                        android:summary="@string/pref.aa.drag_race.brake_boosting.enabled_summary"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.drag_race.debug.display_frequency"
-                        android:title="@string/pref.aa.performance_meter.display_frequency"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="false"
-                        android:key="pref.aa.drag_race.debug.vehicle_speed_measurement"
-                        android:title="@string/pref.aa.performance_meter.display_vehicle_speed_measurement"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedSeekBar
-                        android:defaultValue="30"
-                        android:dialogTitle="@string/pref.aa.virtual_screens.font_size.category"
-                        android:key="pref.aa.drag_race.font_size"
-                        android:max="72"
-                        android:title="@string/pref.aa.virtual_screens.font_size.category"
-                        app:min="22"
-                        app:showSeekBarValue="true"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-
-                    <org.obd.graphs.preferences.components.ExtendedSeekBar
-                        android:defaultValue="10"
-                        android:dialogTitle="@string/pref.aa.performance_meter.metrics_read_freq"
-                        android:key="pref.drag_race.vehicle_speed.freq"
-                        android:max="20"
-                        android:title="@string/pref.aa.performance_meter.metrics_read_freq"
-                        app:min="1"
-                        app:showSeekBarValue="true"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.theme">
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.aa.theme.background.enabled"
-                        android:title="@string/pref.aa.theme.background.enabled"
-                        app:singleLineTitle="false" />
-
-                    <org.obd.graphs.preferences.components.ExtendedCheckBoxPreference
-                        android:defaultValue="false"
-                        android:key="pref.aa.theme.dynamic-selector.enabled"
-                        android:summary="@string/pref.aa.theme.dynamic_selector.enabled_summary"
-                        android:title="@string/pref.aa.theme.dynamic_selector.enabled"
-                        app:singleLineTitle="false" />
-
-                    <com.kizitonwose.colorpreferencecompat.ColorPreferenceCompat
-                        android:defaultValue="0xffff0000"
-                        android:key="pref.aa.theme.progressColor"
-                        android:title="@string/pref.aa.theme.progress_bar_color" />
-
-                    <com.kizitonwose.colorpreferencecompat.ColorPreferenceCompat
-                        android:defaultValue="0xffffffff"
-                        android:key="pref.aa.theme.dividerColor"
-                        android:title="@string/pref.aa.theme.divider_color" />
-
-                    <com.kizitonwose.colorpreferencecompat.ColorPreferenceCompat
-                        android:defaultValue="0xffffffff"
-                        android:key="pref.aa.theme.currentValueColor"
-                        android:title="@string/pref.aa.theme.current_value_color" />
-
-                    <com.kizitonwose.colorpreferencecompat.ColorPreferenceCompat
-                        android:defaultValue="0xffff0000"
-                        android:key="pref.aa.theme.inAlertValueColor"
-                        android:title="@string/pref.aa.theme.inalert_value_color" />
-
-                    <com.kizitonwose.colorpreferencecompat.ColorPreferenceCompat
-                        android:defaultValue="0xffffffff"
-                        android:key="pref.aa.theme.btn.virtual-screen.color"
-                        android:title="@string/pref.aa.theme.virtual_screen_color"
-                        app:colorChoices="@array/pref.colors" />
-
-                </PreferenceCategory>
-
-
-                <PreferenceCategory
-                    android:title="@string/pref.aa.debug_category"
-                    app:singleLineTitle="false">
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.aa.status.fps.enabled"
-                        android:title="@string/pref.aa.surface.fps.display_status"
-                        app:singleLineTitle="false" />
-                </PreferenceCategory>
-
-            </PreferenceScreen>
-
-            <PreferenceScreen
-                android:summary="@string/pref.graph.category"
-                android:title="@string/navigation.title_graph"
-                app:key="pref.graph">
-
-                <PreferenceCategory android:title="@string/pref.pids_category">
-                    <PreferenceScreen
-                        android:key="pref.graph.displayed_parameter_ids"
-                        android:summary="@string/pref.displayed_parameter_ids_summary"
-                        android:title="@string/pref.displayed_parameter_ids">
-                        <PreferenceCategory android:title="@string/pref.pids_category">
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:dialogTitle="@string/pref.displayed_parameter_ids"
-                                android:key="pref.graph.pids.selected"
-                                android:title="@string/pref.displayed_parameter_ids"
-                                app:source="graph"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.trips.title">
-
-
-                    <PreferenceScreen
-                        android:summary="@string/pref.trips.title"
-                        android:title="@string/pref.trips.title"
-                        app:key="pref.gauge.recordings">
-                        <PreferenceCategory android:title="@string/pref.trips.title">
-                            <org.obd.graphs.preferences.trips.TripsListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:key="pref.graph.trips.selected"
-                                android:summary="@string/pref.graph.trips_selected_summary"
-                                android:title="@string/pref.graph.trips_selected" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-
-                <PreferenceCategory android:title="@string/pref.trip_logs_category">
-                    <PreferenceScreen
-                        android:summary="@string/pref.trip_logs_category"
-                        android:title="@string/pref.trip_logs_category"
-                        app:key="pref.trip_logs">
-                        <PreferenceCategory android:title="@string/pref.trip_logs_category">
-                            <org.obd.graphs.preferences.trips.TripsListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:key="pref.graph.trips.selected"
-                                android:summary="@string/pref.graph.trips_selected_summary"
-                                android:title="@string/pref.graph.trips_selected" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.general_settings">
-
-                    <ListPreference
-                        android:defaultValue="Gauge"
-                        android:dialogTitle="@string/pref.graph.filter_source"
-                        android:entries="@array/pref.graph.filter_source"
-                        android:entryValues="@array/pref.graph.filter_source"
-                        android:inputType="number"
-                        android:key="pref.graph.filter.source"
-                        android:title="@string/pref.graph.filter_source"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <org.obd.graphs.preferences.BroadcastEventCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.graph.view.enabled"
-                        android:summary="@string/pref.enable_view_summary"
-                        android:title="@string/pref.enable_view"
-                        app:broadcastEvent="navigation.buttons.changes.event"
-                        app:singleLineTitle="false" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="true"
-                        android:key="pref.graph.cache.enabled"
-                        android:title="@string/pref.graph_cache_enabled" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="true"
-                        android:key="pref.graph.toggle_virtual_screens_double_click"
-                        android:title="@string/pref.toolbar.toggle_double_click"
-                        app:singleLineTitle="false" />
-
-
-                    <ListPreference
-                        android:defaultValue="20"
-                        android:dialogTitle="@string/pref.graph.x_axis_minimum_shift_time"
-                        android:entries="@array/pref.numbers_20_74"
-                        android:entryValues="@array/pref.numbers_20_74"
-                        android:inputType="number"
-                        android:key="pref.graph.x-axis.minimum-shift.time"
-                        android:title="@string/pref.graph.x_axis_minimum_shift_time"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                    <ListPreference
-                        android:defaultValue="20000"
-                        android:dialogTitle="@string/pref.graph.x_axis_start_moving_after_time"
-                        android:entries="@array/pref.numbers_20000_60000"
-                        android:entryValues="@array/pref.numbers_20000_60000"
-                        android:inputType="number"
-                        android:key="pref.graph.x-axis.start-moving-after.time"
-                        android:title="@string/pref.graph.x_axis_start_moving_after_time"
-                        app:singleLineTitle="false"
-                        app:useSimpleSummaryProvider="true" />
-
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.trips_category">
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.trips.recordings.save.short.trip"
-                        android:title="@string/pref.graph.trips_recordings_save_short_trip"
-                        app:singleLineTitle="false" />
-                </PreferenceCategory>
-            </PreferenceScreen>
-
-            <PreferenceScreen
-                android:summary="@string/pref.dashboard_category"
-                android:title="@string/navigation.title_dashboard"
-                app:key="pref.dashboard">
-
-                <PreferenceCategory android:title="@string/pref.pids_category">
-                    <PreferenceScreen
-                        android:key="pref.dash.displayed_parameter_ids"
-                        android:summary="@string/pref.displayed_parameter_ids_summary"
-                        android:title="@string/pref.displayed_parameter_ids">
-                        <PreferenceCategory android:title="@string/pref.pids_category">
-                            <org.obd.graphs.preferences.pid.PidDefinitionListPreferences
-                                android:defaultValue="@array/pref.empty_array"
-                                android:key="pref.dash.pids.selected"
-                                android:summary="@string/pref.displayed_parameter_ids_summary"
-                                android:title="@string/pref.displayed_parameter_ids"
-                                app:singleLineTitle="false"
-                                app:source="dashboard"
-                                app:useSimpleSummaryProvider="true" />
-                        </PreferenceCategory>
-                    </PreferenceScreen>
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.general_settings">
-                    <org.obd.graphs.preferences.BroadcastEventCheckBoxPreference
-                        android:defaultValue="true"
-                        android:key="pref.dash.view.enabled"
-                        app:broadcastEvent="navigation.buttons.changes.event"
-                        android:summary="@string/pref.enable_view_summary"
-                        android:title="@string/pref.enable_view"
-                        app:singleLineTitle="false" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.dash.top.values.blink"
-                        android:title="@string/pref.dash_top_values_blink" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.dash.enable_drag"
-                        android:title="@string/pref.dash_enable_drag_and_drop" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.dash.swipe.to.delete"
-                        android:title="@string/pref.dash_swipe_to_delete" />
-
-                    <SwitchPreferenceCompat
-                        android:defaultValue="false"
-                        android:key="pref.dash.top.values.red.color"
-                        android:title="@string/pref.dash_top_values_red_color" />
-
-                </PreferenceCategory>
-
-                <PreferenceCategory android:title="@string/pref.theme">
-                    <com.kizitonwose.colorpreferencecompat.ColorPreferenceCompat
-                        android:defaultValue="@android:color/holo_green_light"
-                        android:key="pref.dash.background_color_1"
-                        android:title="@string/pref.dash.background_color_1" />
-
-                    <com.kizitonwose.colorpreferencecompat.ColorPreferenceCompat
-                        android:defaultValue="@android:color/holo_green_light"
-                        android:key="pref.dash.background_color_2"
-                        android:title="@string/pref.dash.background_color_2" />
-                </PreferenceCategory>
-            </PreferenceScreen>
-        </PreferenceScreen>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/pref.toolbar_category">
-        <PreferenceScreen
-            android:key="pref.toolbar"
-            android:summary="@string/pref.toolbar_category_summary"
-            android:title="@string/pref.settings">
-
-            <SwitchPreferenceCompat
-                android:defaultValue="false"
-                android:key="pref.toolbar.hide.landscape"
-                android:title="@string/pref.toolbar_hide_landscape"
-                android:summary="@string/pref.toolbar_hide_landscape_summary"
-                app:singleLineTitle="false" />
-            <SwitchPreferenceCompat
-                android:defaultValue="true"
-                android:key="pref.toolbar.hide.doubleclick"
-                android:summary="@string/pref.toolbar_hide_doubleclick_summary"
-                android:title="@string/pref.toolbar_hide_doubleclick"
-                app:singleLineTitle="false" />
-            <SwitchPreferenceCompat
-                android:defaultValue="true"
-                android:key="pref.toolbar.hide.connected"
-                android:title="@string/pref.toolbar_hide_connected"
-                android:summary="@string/pref.toolbar_hide_connected_summary"
-                app:singleLineTitle="false" />
+            <org.obd.graphs.preferences.profile.ProfileResetPreferenceAction
+                android:key="pref.profile.reset"
+                android:summary="@string/pref.profile.reset_summary"
+                android:title="@string/pref.profile.reset" />
+
+            <EditTextPreference
+                android:key="pref.profile.about"
+                android:title="@string/pref.profile.about_title"
+                app:enabled="false"
+                app:useSimpleSummaryProvider="true" />
         </PreferenceScreen>
     </PreferenceCategory>
 
@@ -2272,46 +419,13 @@
 
             <SwitchPreferenceCompat
                 android:defaultValue="false"
-                android:key="pref.debug.trip.save.connector_response"
-                android:title="@string/pref.debug_trip_save_connector_response" />
-
-            <SwitchPreferenceCompat
-                android:defaultValue="false"
                 android:key="pref.debug.logging.enabled"
                 android:title="@string/pref.debug_logging_enabled" />
 
-            <Preference
-                android:key="pref.adapter.gps"
-                android:title="Open GPS screen"
-                android:summary="View raw satellite data and signal strength">
-                <intent
-                    android:targetPackage="@string/applicationId"
-                    android:targetClass="org.obd.graphs.activity.GpsStatusActivity" />
-            </Preference>
-
+            <SwitchPreferenceCompat
+                android:defaultValue="false"
+                android:key="pref.debug.trip.save.connector_response"
+                android:title="@string/pref.debug_trip_save_connector_response" />
         </PreferenceScreen>
     </PreferenceCategory>
-
-    <PreferenceScreen app:key="pref.about">
-        <PreferenceCategory android:title="@string/pref.about_category">
-            <Preference
-                app:layout="@layout/preference_about"
-                app:title="@string/pref.about_title">
-                <intent
-                    android:action="android.intent.action.VIEW"
-                    android:data="https://my-giulia.com" />
-            </Preference>
-            <EditTextPreference
-                android:key="pref.about.build_time"
-                app:enabled="false"
-                app:title="@string/pref.about_build_time"
-                app:useSimpleSummaryProvider="true" />
-
-            <EditTextPreference
-                android:key="pref.about.build_version"
-                app:enabled="false"
-                app:title="@string/pref.about_build_version"
-                app:useSimpleSummaryProvider="true" />
-        </PreferenceCategory>
-    </PreferenceScreen>
 </PreferenceScreen>

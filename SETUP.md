@@ -38,8 +38,7 @@ folder.
 ```
 
 The script points `local.properties` at your SDK, because upstream committed its own Linux
-path. It also writes a placeholder `app/google-services.json`, so Firebase is effectively
-off and no crash data goes to the original author's project.
+path. Firebase was removed from the build, so no `google-services.json` is needed.
 
 ## 3. Build the Android Auto variant
 
@@ -73,8 +72,8 @@ downloads Gradle and the dependencies and took about 6.5 minutes here.
 
 ## Notes
 
-- The flavor is still upstream's `giuliaAA` (app id `org.obd.graphs.my.giulia.aa`). If
-  you also install the store version of ObdGraphs AA, the two will clash. We'll rename it
-  when the BMW profile is added.
+- The only flavor is upstream's `giuliaAA` (app id `org.obd.graphs.my.giulia.aa`), kept so an
+  installed app keeps its settings. If you also install the store version of ObdGraphs AA, the
+  two will clash.
 - `local.properties` is marked `skip-worktree`, so your SDK path never shows up in
   commits.

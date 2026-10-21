@@ -28,7 +28,6 @@ import org.obd.graphs.bl.collector.Metric
 import org.obd.graphs.bl.collector.MetricsCollector
 import org.obd.graphs.bl.datalogger.Pid
 import org.obd.graphs.bl.query.ClassicPids
-import org.obd.graphs.renderer.api.Fps
 import org.obd.metrics.api.model.ObdMetric
 import org.obd.metrics.command.obd.ObdCommand
 import org.obd.metrics.pid.PidDefinition
@@ -37,7 +36,6 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
-import java.lang.reflect.Proxy
 
 // The mockups' values (scripts/mockups/classic_dashboard.py).
 private val MOCKUP_VALUES: Map<Long, Number> =
@@ -119,9 +117,7 @@ class ClassicRenderTest {
         val renderer =
             ClassicSurfaceRenderer(
                 context = RuntimeEnvironment.getApplication(),
-                settings = stub(),
                 metricsCollector = FakeCollector(values),
-                fps = Fps(),
                 isRunning = { running }
             )
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -158,12 +154,6 @@ class ClassicRenderTest {
         bitmap: Bitmap,
         name: String
     ) = File(outDir, name).outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-
-    // The renderer never reads settings (tech design D8); a proxy that throws would show it if it did.
-    private inline fun <reified T> stub(): T =
-        Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, _ ->
-            throw UnsupportedOperationException("unexpected call ${method.name}")
-        } as T
 
     private class FakeCollector(
         values: Map<Long, Number>

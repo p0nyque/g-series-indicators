@@ -17,15 +17,15 @@
 package org.obd.graphs.preferences.pid
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PidDefinitionDialogModeTest {
     @Test
-    fun `select all warns only in the dialogs listing the whole PID registry`() {
-        val warned =
-            listOf("trip_info", "trip_info_bottom", "performance", "performance_bottom", "low", "high", "dashboard")
-                .filter { PidDefinitionDialogMode.fromString(it).warnsOnSelectAll }
-
-        assertEquals(listOf("trip_info", "performance"), warned)
+    fun `edit is the registry dialog, anything else is a plain selection`() {
+        assertTrue(PidDefinitionDialogMode.fromString("edit").isEdit)
+        assertFalse(PidDefinitionDialogMode.fromString("trip_info").isEdit)
+        assertEquals(PidDefinitionDialogMode.Custom("x"), PidDefinitionDialogMode.fromString("x"))
     }
 }

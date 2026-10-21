@@ -72,7 +72,7 @@ data class PidFormData(
 
 class EditPidBottomSheet(
     private val pidItem: PidDefinitionDetails? = null,
-    private val mode: PidDefinitionDialogMode = PidDefinitionDialogMode.Alert,
+    private val mode: PidDefinitionDialogMode = PidDefinitionDialogMode.Edit,
     private val onSave: (PidFormData) -> Unit
 ) : BottomSheetDialogFragment() {
 
@@ -156,27 +156,15 @@ class EditPidBottomSheet(
         val tvError = view.findViewById<TextView>(R.id.tvValidationError)
         val btnSave = view.findViewById<Button>(R.id.btnSave)
 
-        if (mode.isAlert) {
-            tilDescription.visibility = View.GONE
-            tilLongDescription.visibility = View.GONE
-            llCorePidFields.visibility = View.GONE
-            llDataFields.visibility = View.GONE
-            tilFormula.visibility = View.GONE
-            tvFormulaRules.visibility = View.GONE
-            llToggles.visibility = View.GONE
+        tilDescription.visibility = View.VISIBLE
+        tilLongDescription.visibility = View.VISIBLE
+        llCorePidFields.visibility = View.VISIBLE
+        llDataFields.visibility = View.VISIBLE
+        tilFormula.visibility = View.VISIBLE
+        tvFormulaRules.visibility = View.VISIBLE
+        llToggles.visibility = View.VISIBLE
 
-            tvTitle.text = pidItem?.source?.description ?: getString(R.string.pref_pid_manage_dialog_edit_alerts_title)
-        } else {
-            tilDescription.visibility = View.VISIBLE
-            tilLongDescription.visibility = View.VISIBLE
-            llCorePidFields.visibility = View.VISIBLE
-            llDataFields.visibility = View.VISIBLE
-            tilFormula.visibility = View.VISIBLE
-            tvFormulaRules.visibility = View.VISIBLE
-            llToggles.visibility = View.VISIBLE
-
-            tvTitle.text = if (pidItem != null) getString(R.string.pref_pid_manage_dialog_edit_pid_title) else getString(R.string.pref_pid_manage_dialog_add_new_pid_title)
-        }
+        tvTitle.text = if (pidItem != null) getString(R.string.pref_pid_manage_dialog_edit_pid_title) else getString(R.string.pref_pid_manage_dialog_add_new_pid_title)
 
         if (pidItem != null) {
             val currentCanHeader = pidItem.source.deductMode()

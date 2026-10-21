@@ -56,8 +56,7 @@ class VehicleStatusMetricsProcessorTest : TestSetup() {
         mockkStatic("org.obd.graphs.BroadcastKt")
         every { sendBroadcastEvent(any<String>()) } just Runs
 
-        settings.vehicleStatusPanelEnabled = true
-        settings.vehicleStatusDisconnectWhenOff = false
+        settings.vehicleStatusDisconnectWhenOff = true
 
         processor = VehicleStatusMetricsProcessor()
     }
@@ -152,7 +151,6 @@ class VehicleStatusMetricsProcessorTest : TestSetup() {
 
     @Test
     fun `does nothing when both status panel and disconnect flags are disabled`() {
-        settings.vehicleStatusPanelEnabled = false
         settings.vehicleStatusDisconnectWhenOff = false
 
         processor.postValue(statusMetric(engineRunning = true, vehicleRunning = true, keyStatusOn = true))

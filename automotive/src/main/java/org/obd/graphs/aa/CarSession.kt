@@ -20,42 +20,25 @@ import android.content.Intent
 import android.content.res.Configuration
 import androidx.car.app.Screen
 import androidx.car.app.Session
-import androidx.car.app.connection.CarConnection
-import org.obd.graphs.aa.screen.CarScreen
-import org.obd.graphs.aa.screen.CarScreenFactory
-import org.obd.graphs.aa.screen.nav.GOTO_LAST_VSITED_SCREEN_EVENT
+import org.obd.graphs.aa.screen.ClassicCarScreen
 import org.obd.graphs.bl.collector.MetricsCollector
 import org.obd.graphs.preferences.setPreferencesContext
-import org.obd.graphs.renderer.api.Fps
-import org.obd.graphs.sendBroadcastEvent
 import org.obd.graphs.setCarContext
 
+// One screen only: the Classic dashboard. There is no screen list, no routines and no DTC screen on the car.
 internal class CarSession : Session() {
-    private val settings by lazy { CarSettings(carContext) }
     private val metricsCollector = MetricsCollector.instance()
-    private val fps: Fps = Fps()
-    private lateinit var screen: CarScreen
+    private lateinit var screen: ClassicCarScreen
 
     override fun onCreateScreen(intent: Intent): Screen {
         setCarContext(carContext)
         setPreferencesContext(carContext)
-        screen = CarScreenFactory.instance(carContext, settings, metricsCollector, fps)
-        CarConnection(carContext).type.observe(this, ::onConnectionStateUpdated)
+        screen = ClassicCarScreen(carContext, CarSettings(), metricsCollector)
         return screen
     }
 
     override fun onCarConfigurationChanged(newConfiguration: Configuration) {
         super.onCarConfigurationChanged(newConfiguration)
         screen.onCarConfigurationChanged()
-    }
-
-    private fun onConnectionStateUpdated(connectionState: Int) {
-        when (connectionState) {
-            CarConnection.CONNECTION_TYPE_PROJECTION -> {
-                if (settings.isLoadLastVisitedScreenEnabled()) {
-                    sendBroadcastEvent(GOTO_LAST_VSITED_SCREEN_EVENT)
-                }
-            }
-        }
     }
 }

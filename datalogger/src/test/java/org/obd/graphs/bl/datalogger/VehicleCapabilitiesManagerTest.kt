@@ -19,88 +19,46 @@ package org.obd.graphs.bl.datalogger
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
-import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import org.obd.graphs.Notifications
 import org.obd.graphs.bl.TestSetup
-import org.obd.graphs.bl.datalogger.dtc.DtcAnnouncement
-import org.obd.graphs.bl.datalogger.dtc.DtcHistoryStore
-import org.obd.graphs.bl.datalogger.dtc.DtcScanKind
-import org.obd.graphs.bl.datalogger.dtc.NO_VIN
-import org.obd.graphs.bl.datalogger.dtc.PREF_DTC_NOTIFY_NEW_CODES
-import org.obd.graphs.bl.datalogger.dtc.UNKNOWN_VEHICLE
-import org.obd.metrics.api.model.DiagnosticTroubleCode
-import org.obd.metrics.api.model.SnapshotPID
 import org.obd.metrics.api.model.VehicleCapabilities
 import org.obd.metrics.command.dtc.DiagnosticTroubleCodeClearStatus
-import org.obd.metrics.command.dtc.DtcModuleStatus
 import org.obd.metrics.pid.PidDefinition
 import org.obd.metrics.pid.PidDefinitionRegistry
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.io.File
-import java.io.Serializable
 
 private const val PREF_VEHICLE_SUPPORTED_PIDS = "pref.datalogger.supported.pids"
 private const val PREF_VEHICLE_METADATA = "pref.datalogger.vehicle.properties"
-private const val PREF_VEHICLE_VIN = "pref.datalogger.vehicle.vin"
-private const val PREF_DTC = "pref.datalogger.dtc"
-private const val PREF_DTC_READ_INFO = "pref.datalogger.dtc.read_info"
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class VehicleCapabilitiesManagerTest : TestSetup() {
-    @get:Rule
-    val folder = TemporaryFolder()
-
-    private fun dtc(
-        standardCode: String,
-        description: String
-    ) = DiagnosticTroubleCode().apply {
-        this.standardCode = standardCode
-        this.description = description
-    }
-
     private fun vehicleCapabilities(
         metadata: Map<String, String> = emptyMap(),
-        capabilities: Set<String> = emptySet(),
-        dtc: Set<DiagnosticTroubleCode> = emptySet()
-    ) = VehicleCapabilities(metadata, capabilities, dtc, DiagnosticTroubleCodeClearStatus.OK)
+        capabilities: Set<String> = emptySet()
+    ) = VehicleCapabilities(metadata, capabilities, emptySet(), DiagnosticTroubleCodeClearStatus.OK)
 
     @Before
     override fun setup() {
         super.setup()
         mockkObject(dataLoggerSettings)
-        mockkStatic("org.obd.graphs.BroadcastKt")
-        every { org.obd.graphs.sendBroadcastEvent(any<String>()) } returns Unit
-        every { org.obd.graphs.sendBroadcastEvent(any<String>(), any<Serializable>()) } returns Unit
-        mockkObject(Notifications)
-        every { Notifications.show(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns Unit
-        DtcHistoryStore.file = { File(folder.root, "dtc_history.json") }
-        DtcHistoryStore.reset()
     }
 
     @After
-    fun tearDown() {
-        DtcHistoryStore.reset()
-        unmockkAll()
-    }
+    fun tearDown() = unmockkAll()
 
     @Test
     fun `updateCapabilities stores supported pids when reading is enabled and capabilities are present`() {
         every { dataLoggerSettings.instance() } returns
-            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = true, dtcEnabled = false))
+            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = true))
 
         val capabilities = vehicleCapabilities(metadata = mapOf("vin" to "WVW123"), capabilities = setOf("0100", "010C"))
 
@@ -113,76 +71,13 @@ class VehicleCapabilitiesManagerTest : TestSetup() {
     @Test
     fun `updateCapabilities does not store supported pids when reading is disabled`() {
         every { dataLoggerSettings.instance() } returns
-            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = false, dtcEnabled = false))
+            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = false))
 
         val capabilities = vehicleCapabilities(capabilities = setOf("0100"))
 
         VehicleCapabilitiesManager.updateCapabilities(capabilities)
 
         verify(exactly = 0) { editor.putStringSet(eq(PREF_VEHICLE_SUPPORTED_PIDS), any()) }
-    }
-
-    @Test
-    fun `updateCapabilities broadcasts DTC available only when dtc reading is enabled and dtc is not empty`() {
-        every { dataLoggerSettings.instance() } returns
-            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = false, dtcEnabled = true))
-
-        val capabilities = vehicleCapabilities(dtc = setOf(dtc("P0100", "Mass air flow circuit")))
-
-        VehicleCapabilitiesManager.updateCapabilities(capabilities)
-
-        verify { org.obd.graphs.sendBroadcastEvent(DATA_LOGGER_DTC_AVAILABLE) }
-    }
-
-    @Test
-    fun `updateCapabilities does not broadcast when dtc reading is disabled`() {
-        every { dataLoggerSettings.instance() } returns
-            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = false, dtcEnabled = false))
-
-        val capabilities = vehicleCapabilities(dtc = setOf(dtc("P0100", "Mass air flow circuit")))
-
-        VehicleCapabilitiesManager.updateCapabilities(capabilities)
-
-        verify(exactly = 0) { org.obd.graphs.sendBroadcastEvent(DATA_LOGGER_DTC_AVAILABLE) }
-    }
-
-    @Test
-    fun `updateDTC and getDiagnosticTroubleCodes round trip through preferences`() {
-        val slot = slot<String>()
-        every { editor.putString(eq(PREF_DTC), capture(slot)) } returns editor
-
-        VehicleCapabilitiesManager.updateDTC(setOf(dtc("P0100", "Mass air flow circuit")))
-
-        every { sharedPrefs.getString(eq(PREF_DTC), any()) } returns slot.captured
-
-        val result = VehicleCapabilitiesManager.getDiagnosticTroubleCodes()
-
-        assertEquals(1, result.size)
-        assertEquals("P0100", result[0].standardCode)
-    }
-
-    @Test
-    fun `updateDTC and getDiagnosticTroubleCodes preserve the module tag through the round trip`() {
-        val slot = slot<String>()
-        every { editor.putString(eq(PREF_DTC), capture(slot)) } returns editor
-
-        val abs = dtc("C0035", "Wheel Speed Sensor").apply { module = "ABS" }
-        val engine = dtc("P0300", "Random Misfire").apply { module = "Engine" }
-        VehicleCapabilitiesManager.updateDTC(setOf(abs, engine))
-
-        every { sharedPrefs.getString(eq(PREF_DTC), any()) } returns slot.captured
-
-        val result = VehicleCapabilitiesManager.getDiagnosticTroubleCodes()
-
-        assertEquals(2, result.size)
-        assertEquals(setOf("ABS", "Engine"), result.map { it.module }.toSet())
-    }
-
-    @Test
-    fun `getDiagnosticTroubleCodes returns an empty list instead of throwing on malformed json`() {
-        every { sharedPrefs.getString(eq(PREF_DTC), any()) } returns "not-json"
-
-        assertTrue(VehicleCapabilitiesManager.getDiagnosticTroubleCodes().isEmpty())
     }
 
     @Test
@@ -215,265 +110,5 @@ class VehicleCapabilitiesManagerTest : TestSetup() {
         val result = VehicleCapabilitiesManager.getSupportedPIDs()
 
         assertEquals(setOf("0100", "010c"), result.toSet())
-    }
-
-    @Test
-    fun `updateDTC stamps the read with its time and the connected vehicle's VIN`() {
-        every { sharedPrefs.getString(eq(PREF_VEHICLE_METADATA), any()) } returns """{"VIN":"ZARFAMAN0K7612345"}"""
-        val slot = slot<String>()
-        every { editor.putString(eq(PREF_DTC_READ_INFO), capture(slot)) } returns editor
-
-        VehicleCapabilitiesManager.updateDTC(setOf(dtc("P0100", "Mass air flow circuit")), now = 1_760_000_000_000)
-
-        every { sharedPrefs.getString(eq(PREF_DTC_READ_INFO), any()) } returns slot.captured
-        val info = VehicleCapabilitiesManager.getDtcReadInfo()!!
-
-        assertEquals(1_760_000_000_000, info.timestamp)
-        assertEquals("ZARFAMAN0K7612345", info.vin)
-    }
-
-    @Test
-    fun `updateDTC stamps the read without a VIN when the vehicle reported none`() {
-        val slot = slot<String>()
-        every { editor.putString(eq(PREF_DTC_READ_INFO), capture(slot)) } returns editor
-
-        VehicleCapabilitiesManager.updateDTC(emptySet(), now = 5)
-
-        every { sharedPrefs.getString(eq(PREF_DTC_READ_INFO), any()) } returns slot.captured
-        assertNull(VehicleCapabilitiesManager.getDtcReadInfo()!!.vin)
-    }
-
-    @Test
-    fun `getDtcReadInfo is null for codes stored before reads were stamped, and on malformed json`() {
-        assertNull(VehicleCapabilitiesManager.getDtcReadInfo())
-
-        every { sharedPrefs.getString(eq(PREF_DTC_READ_INFO), any()) } returns "not-json"
-        assertNull(VehicleCapabilitiesManager.getDtcReadInfo())
-    }
-
-    @Test
-    fun `updateCapabilities leaves the stored codes to the module scan on connect`() {
-        every { dataLoggerSettings.instance() } returns
-            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = false, dtcEnabled = true))
-
-        VehicleCapabilitiesManager.updateCapabilities(vehicleCapabilities(), moduleScanOnConnect = true)
-
-        verify(exactly = 0) { editor.putString(eq(PREF_DTC), any()) }
-        verify(exactly = 0) { editor.putString(eq(PREF_DTC_READ_INFO), any()) }
-        verify(exactly = 0) { org.obd.graphs.sendBroadcastEvent(DATA_LOGGER_DTC_AVAILABLE) }
-    }
-
-    @Test
-    fun `updateDTC and getDiagnosticTroubleCodes preserve the extended data through the round trip`() {
-        val slot = slot<String>()
-        every { editor.putString(eq(PREF_DTC), capture(slot)) } returns editor
-
-        val counter = PidDefinition(1239005L, 1, "A", "19", "6080", "", "DTC Event Counter", 0, 255, null)
-        val code = dtc("P0100", "Mass air flow circuit").apply { details = listOf(SnapshotPID(counter, "07", 7)) }
-        VehicleCapabilitiesManager.updateDTC(setOf(code))
-
-        every { sharedPrefs.getString(eq(PREF_DTC), any()) } returns slot.captured
-        val details = VehicleCapabilitiesManager.getDiagnosticTroubleCodes().single().details
-
-        assertEquals(1, details.size)
-        assertEquals("6080", details[0].definition.pid)
-        assertEquals(7, details[0].decodedValue.toInt())
-    }
-
-    @Test
-    fun `updateDTC appends the scan to the vehicle's history with its kind, modules and time`() {
-        every { sharedPrefs.getString(eq(PREF_VEHICLE_METADATA), any()) } returns """{"VIN":"ZARFAMAN0K7612345"}"""
-
-        VehicleCapabilitiesManager.updateDTC(
-            setOf(dtc("P0100", "Mass air flow circuit")),
-            scannedModules = listOf("Engine ECU"),
-            now = 7,
-            kind = DtcScanKind.CLEAR
-        )
-
-        val scan = DtcHistoryStore.scans("ZARFAMAN0K7612345").single()
-        assertEquals(7L, scan.timestamp)
-        assertEquals(DtcScanKind.CLEAR, scan.kind)
-        assertEquals(listOf("Engine ECU"), scan.scannedModules)
-        assertEquals("P0100", scan.codes.single().standardCode)
-    }
-
-    @Test
-    fun `the init read on connect is recorded as a connect scan of the unknown vehicle when no VIN came`() {
-        every { dataLoggerSettings.instance() } returns
-            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = false, dtcEnabled = true))
-
-        VehicleCapabilitiesManager.updateCapabilities(vehicleCapabilities(dtc = setOf(dtc("P0100", "Mass air flow circuit"))))
-
-        assertEquals(DtcScanKind.CONNECT, DtcHistoryStore.scans(null).single().kind)
-        assertEquals(DtcHistoryStore.scans(null), DtcHistoryStore.scans(UNKNOWN_VEHICLE))
-    }
-
-    @Test
-    fun `updateDTC stores how each module answered, in the pref and in the history scan`() {
-        val slot = slot<String>()
-        every { editor.putString(eq("pref.datalogger.dtc.module_status"), capture(slot)) } returns editor
-        val status = mapOf("Engine ECU" to DtcModuleStatus.RESPONDED, "ABS" to DtcModuleStatus.NO_RESPONSE)
-
-        VehicleCapabilitiesManager.updateDTC(emptySet(), listOf("Engine ECU", "ABS"), now = 3, moduleStatus = status)
-
-        every { sharedPrefs.getString(eq("pref.datalogger.dtc.module_status"), any()) } returns slot.captured
-        assertEquals(status, VehicleCapabilitiesManager.getDtcModuleStatus())
-        assertEquals(status, DtcHistoryStore.scans(null).single().moduleStatus)
-    }
-
-    @Test
-    fun `a list stored before module statuses were recorded has none`() {
-        assertTrue(VehicleCapabilitiesManager.getDtcModuleStatus().isEmpty())
-    }
-
-    private fun connectScans(vararg scans: Set<DiagnosticTroubleCode>) {
-        every { sharedPrefs.getString(eq(PREF_VEHICLE_METADATA), any()) } returns """{"VIN":"ZARFAMAN0K7612345"}"""
-        scans.forEachIndexed { i, dtc -> VehicleCapabilitiesManager.updateDTC(dtc, now = i + 1L, kind = DtcScanKind.CONNECT) }
-    }
-
-    @Test
-    fun `a connect scan that finds codes new to the vehicle announces them`() {
-        every { sharedPrefs.getBoolean(PREF_DTC_NOTIFY_NEW_CODES, true) } returns true
-        every { context.getString(any()) } returns "channel"
-        every { context.getString(any(), any()) } returns "title"
-        every { context.packageManager } returns mockk { every { getLaunchIntentForPackage(any()) } returns null }
-
-        connectScans(setOf(dtc("P0100", "a")), setOf(dtc("P0100", "a"), dtc("P0200", "b")))
-
-        verify(exactly = 1) { org.obd.graphs.sendBroadcastEvent(DATA_LOGGER_DTC_NEW_CODES, DtcAnnouncement(listOf("P0200"), firstScan = false, codes = listOf("P0200"))) }
-        verify(exactly = 1) { Notifications.show(any(), any(), any(), any(), any(), any(), "P0200", any(), any(), any(), "P0200") }
-    }
-
-    @Test
-    fun `the first scan announces its codes, the same codes on the next connect and a manual read do not`() {
-        every { sharedPrefs.getBoolean(PREF_DTC_NOTIFY_NEW_CODES, true) } returns true
-
-        connectScans(setOf(dtc("P0100", "a")), setOf(dtc("P0100", "a")))
-        VehicleCapabilitiesManager.updateDTC(setOf(dtc("P0100", "a"), dtc("P0200", "b")), now = 10, kind = DtcScanKind.READ)
-
-        verify(exactly = 1) { org.obd.graphs.sendBroadcastEvent(DATA_LOGGER_DTC_NEW_CODES, any<Serializable>()) }
-        verify(exactly = 1) { org.obd.graphs.sendBroadcastEvent(DATA_LOGGER_DTC_NEW_CODES, DtcAnnouncement(listOf("P0100"), firstScan = true, codes = listOf("P0100"))) }
-    }
-
-    @Test
-    fun `new codes are not announced when the setting is off`() {
-        every { sharedPrefs.getBoolean(PREF_DTC_NOTIFY_NEW_CODES, true) } returns false
-
-        connectScans(setOf(dtc("P0100", "a")), setOf(dtc("P0100", "a"), dtc("P0200", "b")))
-
-        verify(exactly = 0) { org.obd.graphs.sendBroadcastEvent(DATA_LOGGER_DTC_NEW_CODES, any<Serializable>()) }
-        verify(exactly = 0) { Notifications.show(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
-    }
-
-    @Test
-    fun `new codes of a vehicle without a VIN reply are not announced`() {
-        every { sharedPrefs.getBoolean(PREF_DTC_NOTIFY_NEW_CODES, true) } returns true
-
-        VehicleCapabilitiesManager.updateDTC(setOf(dtc("P0100", "a")), now = 1, kind = DtcScanKind.CONNECT)
-        VehicleCapabilitiesManager.updateDTC(setOf(dtc("P0100", "a"), dtc("P0200", "b")), now = 2, kind = DtcScanKind.CONNECT)
-
-        verify(exactly = 0) { org.obd.graphs.sendBroadcastEvent(DATA_LOGGER_DTC_NEW_CODES, any<Serializable>()) }
-    }
-
-    // Stored DTC prefs read back what updateDTC wrote, like the real SharedPreferences.
-    private fun storeDtcPrefs() {
-        val store = mutableMapOf<String, String>()
-        listOf(PREF_DTC, PREF_DTC_READ_INFO, "pref.datalogger.dtc.scanned_modules", "pref.datalogger.dtc.module_status").forEach { key ->
-            val value = slot<String>()
-            every { editor.putString(eq(key), capture(value)) } answers {
-                store[key] = value.captured
-                editor
-            }
-            every { sharedPrefs.getString(eq(key), any()) } answers { store[key] ?: secondArg() }
-        }
-    }
-
-    @Test
-    fun `clearing one module keeps the other modules' codes on the list, history records the clear alone`() {
-        storeDtcPrefs()
-        every { sharedPrefs.getString(eq(PREF_VEHICLE_METADATA), any()) } returns """{"VIN":"ZARFAMAN0K7612345"}"""
-        val engine = dtc("P0100", "Mass air flow circuit").apply { module = "Engine ECU" }
-        val abs = dtc("C0035", "Wheel speed sensor").apply { module = "ABS" }
-
-        VehicleCapabilitiesManager.updateDTC(setOf(engine, abs), listOf("Engine ECU", "ABS"), now = 1, kind = DtcScanKind.CONNECT)
-        VehicleCapabilitiesManager.updateDTC(emptySet(), listOf("Engine ECU"), now = 2, kind = DtcScanKind.CLEAR)
-
-        assertEquals(listOf("C0035"), VehicleCapabilitiesManager.getDiagnosticTroubleCodes().map { it.standardCode })
-        assertEquals(setOf("Engine ECU", "ABS"), VehicleCapabilitiesManager.getDtcScannedModules().toSet())
-        assertEquals(2L, VehicleCapabilitiesManager.getDtcReadInfo()!!.timestamp)
-        val clear = DtcHistoryStore.scans("ZARFAMAN0K7612345").last()
-        assertEquals(listOf("Engine ECU"), clear.scannedModules)
-        assertTrue(clear.codes.isEmpty())
-
-        // The next connect scan covers every module and replaces the list.
-        VehicleCapabilitiesManager.updateDTC(emptySet(), listOf("Engine ECU"), now = 3, kind = DtcScanKind.CONNECT)
-        assertTrue(VehicleCapabilitiesManager.getDiagnosticTroubleCodes().isEmpty())
-        assertEquals(listOf("Engine ECU"), VehicleCapabilitiesManager.getDtcScannedModules())
-    }
-
-    @Test
-    fun `updateDTC stamps the read and its history with the VIN read by the action`() {
-        storeDtcPrefs()
-
-        VehicleCapabilitiesManager.updateDTC(setOf(dtc("P0100", "a")), now = 7, vin = "ZAREAEBN9K7617289")
-
-        assertEquals("ZAREAEBN9K7617289", VehicleCapabilitiesManager.getDtcReadInfo()!!.vin)
-        assertEquals(7L, DtcHistoryStore.scans("ZAREAEBN9K7617289").single().timestamp)
-    }
-
-    @Test
-    fun `without a VIN reply the read falls back to the connect VIN, an empty reply is NO_VIN`() {
-        storeDtcPrefs()
-        every { sharedPrefs.getString(eq(PREF_VEHICLE_METADATA), any()) } returns """{"VIN":"ZARFAMAN0K7612345"}"""
-
-        VehicleCapabilitiesManager.updateDTC(emptySet(), now = 1, vin = null)
-        assertEquals("ZARFAMAN0K7612345", VehicleCapabilitiesManager.getDtcReadInfo()!!.vin)
-
-        VehicleCapabilitiesManager.updateDTC(emptySet(), now = 2, vin = "")
-        assertEquals(NO_VIN, VehicleCapabilitiesManager.getDtcReadInfo()!!.vin)
-    }
-
-    // Automatic DTC reading off: no VIN in the connect metadata. Before the action read the VIN, both scans went
-    // under UNKNOWN and the cleared codes never showed as "No longer reported".
-    @Test
-    fun `a read then a clear without the connect VIN reports the cleared codes as gone`() {
-        storeDtcPrefs()
-        val engine = dtc("P0100", "Mass air flow circuit").apply { module = "Engine ECU" }
-        val other = dtc("P0200", "Injector circuit").apply { module = "Engine ECU" }
-
-        VehicleCapabilitiesManager.updateDTC(setOf(engine, other), listOf("Engine ECU"), now = 1, kind = DtcScanKind.READ, vin = "ZAREAEBN9K7617289")
-        VehicleCapabilitiesManager.updateDTC(setOf(other), listOf("Engine ECU"), now = 2, kind = DtcScanKind.CLEAR, vin = "ZAREAEBN9K7617289")
-
-        val diff = DtcHistoryStore.diff(VehicleCapabilitiesManager.getDtcReadInfo())
-        assertEquals(listOf("P0100"), diff.gone.map { it.standardCode })
-    }
-
-    // Automatic DTC reading off: the connect reads no VIN, so the "another vehicle" line had no current VIN to compare
-    // with. The VIN a DTC action read (onDTCCompleted) is the connected car's until the next connect.
-    @Test
-    fun `the VIN read by a DTC action becomes the connected car's VIN until the next connect`() {
-        storeDtcPrefs()
-        every { dataLoggerSettings.instance() } returns
-            DataLoggerSettings(adapter = Adapter(vehicleCapabilitiesReadingEnabled = false, dtcEnabled = false))
-
-        VehicleCapabilitiesManager.updateDTC(emptySet(), now = 1, vin = "ZAREAEBN9K7617289")
-        verify { editor.putString(PREF_VEHICLE_VIN, "ZAREAEBN9K7617289") }
-
-        every { sharedPrefs.getString(eq(PREF_VEHICLE_VIN), any()) } returns "ZAREAEBN9K7617289"
-        every { sharedPrefs.getString(eq(PREF_VEHICLE_METADATA), any()) } returns """{"VIN":"ZARFAMAN0K7612345"}"""
-        assertEquals("ZAREAEBN9K7617289", VehicleCapabilitiesManager.getCurrentVin())
-
-        VehicleCapabilitiesManager.updateCapabilities(vehicleCapabilities())
-        verify { editor.remove(PREF_VEHICLE_VIN) }
-    }
-
-    @Test
-    fun `an action without a VIN reply keeps the connected car's VIN`() {
-        storeDtcPrefs()
-
-        VehicleCapabilitiesManager.updateDTC(emptySet(), now = 1, vin = null)
-
-        verify(exactly = 0) { editor.putString(eq(PREF_VEHICLE_VIN), any()) }
     }
 }

@@ -24,27 +24,10 @@ const val DATA_LOGGER_WIFI_NOT_CONNECTED = "data.logger.error.wifi.not.connected
 const val DATA_LOGGER_BLE_NOT_REACHABLE = "data.logger.error.ble.not_reachable"
 const val DATA_LOGGER_CONNECTED_EVENT = "data.logger.connected"
 const val DATA_LOGGER_SCHEDULED_STOP_EVENT = "data.logger.scheduled.stop"
-
-const val DATA_LOGGER_DTC_ACTION_COMPLETED = "data.logger.dtc.action.completed.event"
-
-const val DATA_LOGGER_DTC_AVAILABLE = "data.logger.dtc.available"
-
-// A DTC read / clear moved on to the next module; extras: dtc.DtcScanProgress.
-const val DATA_LOGGER_DTC_PROGRESS = "data.logger.dtc.progress"
-
-// The connect scan found codes to tell the driver about; extras: dtc.DtcAnnouncement.
-const val DATA_LOGGER_DTC_NEW_CODES = "data.logger.dtc.new_codes"
 const val DATA_LOGGER_CONNECTING_EVENT = "data.logger.connecting"
 const val DATA_LOGGER_STOPPED_EVENT = "data.logger.stopped"
 const val DATA_LOGGER_ERROR_EVENT = "data.logger.error"
 const val DATA_LOGGER_NO_NETWORK_EVENT = "data.logger.network_error"
-
-const val ROUTINE_EXECUTED_SUCCESSFULLY_EVENT = "data.logger.routine.executed_successfully"
-const val ROUTINE_EXECUTION_FAILED_EVENT = "data.logger.routine.execution_failed"
-const val ROUTINE_EXECUTION_NO_DATA_RECEIVED_EVENT = "data.logger.routine.no_data_received"
-const val ROUTINE_REJECTED_EVENT = "data.logger.routine.rejected"
-const val ROUTINE_WORKFLOW_NOT_RUNNING_EVENT = "data.logger.routine.workflow_not_running"
-const val ROUTINE_UNKNOWN_STATUS_EVENT = "data.logger.routine.unknown_status"
 
 const val MODULE_DISCOVERY_RESULT_EVENT = "data.logger.module_discovery.result"
 

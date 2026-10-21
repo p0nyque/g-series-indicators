@@ -16,51 +16,22 @@
  */
 package org.obd.graphs.preferences.pid
 
+// The PID dialog has one job left: browsing and editing the registry (source "edit").
 sealed class PidDefinitionDialogMode {
     object Edit : PidDefinitionDialogMode()
-    object Alert : PidDefinitionDialogMode()
-    object TripInfo : PidDefinitionDialogMode()
-    object TripInfoBottom : PidDefinitionDialogMode()
-    object Performance : PidDefinitionDialogMode()
-    object PerformanceBottom : PidDefinitionDialogMode()
-    object LowPriority : PidDefinitionDialogMode()
-    object HighPriority : PidDefinitionDialogMode()
-    object Dashboard : PidDefinitionDialogMode()
-    object Graph : PidDefinitionDialogMode()
-    object Gauge : PidDefinitionDialogMode()
-    object Giulia : PidDefinitionDialogMode()
-    object AA : PidDefinitionDialogMode()
-    data class Custom(val id: String) : PidDefinitionDialogMode()
 
-    val isInteractive: Boolean
-        get() = this is Edit || this is Alert
-
-    // These dialogs list the whole PID registry, so "Select all" adds every PID to the query.
-    val warnsOnSelectAll: Boolean
-        get() = this is TripInfo || this is Performance
+    data class Custom(
+        val id: String
+    ) : PidDefinitionDialogMode()
 
     val isEdit: Boolean
         get() = this is Edit
 
-    val isAlert: Boolean
-        get() = this is Alert
-
     companion object {
-        fun fromString(source: String?): PidDefinitionDialogMode = when (source) {
-            "edit" -> Edit
-            "alert" -> Alert
-            "trip_info" -> TripInfo
-            "trip_info_bottom" -> TripInfoBottom
-            "performance" -> Performance
-            "performance_bottom" -> PerformanceBottom
-            "low" -> LowPriority
-            "high" -> HighPriority
-            "dashboard" -> Dashboard
-            "graph" -> Graph
-            "gauge" -> Gauge
-            "giulia" -> Giulia
-            "aa" -> AA
-            else -> Custom(source ?: "")
-        }
+        fun fromString(source: String?): PidDefinitionDialogMode =
+            when (source) {
+                "edit" -> Edit
+                else -> Custom(source ?: "")
+            }
     }
 }

@@ -19,78 +19,82 @@ package org.obd.graphs.activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import android.os.Bundle
-import android.os.StrictMode
-import android.os.StrictMode.ThreadPolicy
-import android.os.StrictMode.VmPolicy
+import android.provider.Settings
 import android.util.Log
-import android.view.View
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.GravityCompat
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.NavigationUI
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.obd.graphs.BuildConfig
-import org.obd.graphs.EXTRA_NAVIGATE_TO
 import org.obd.graphs.ExceptionHandler
 import org.obd.graphs.MAIN_ACTIVITY_EVENT_DESTROYED
 import org.obd.graphs.MAIN_ACTIVITY_EVENT_PAUSE
-import org.obd.graphs.NAVIGATE_TO_DTC
+import org.obd.graphs.MODULES_LIST_CHANGED_EVENT
 import org.obd.graphs.Network
 import org.obd.graphs.Permissions
 import org.obd.graphs.R
+import org.obd.graphs.REQUEST_LOCATION_PERMISSIONS
+import org.obd.graphs.REQUEST_NOTIFICATION_PERMISSIONS
+import org.obd.graphs.REQUEST_PERMISSIONS_BT
+import org.obd.graphs.SCREEN_LOCK_DIALOG_CANCELLED_EVENT
+import org.obd.graphs.SCREEN_LOCK_PROGRESS_EVENT
+import org.obd.graphs.SCREEN_UNLOCK_PROGRESS_EVENT
+import org.obd.graphs.ScreenLock
 import org.obd.graphs.bl.datalogger.AutoConnect
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_ADAPTER_NOT_SET_EVENT
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_BLE_NOT_REACHABLE
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_CONNECTED_EVENT
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_CONNECTING_EVENT
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_ERROR_CONNECT_EVENT
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_ERROR_EVENT
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_NO_NETWORK_EVENT
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_STOPPED_EVENT
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_WIFI_INCORRECT
+import org.obd.graphs.bl.datalogger.DATA_LOGGER_WIFI_NOT_CONNECTED
 import org.obd.graphs.bl.datalogger.DataLoggerRepository
-import org.obd.graphs.bl.drag.dragRacingMetricsProcessor
+import org.obd.graphs.bl.datalogger.WorkflowStatus
+import org.obd.graphs.bl.datalogger.dataLoggerSettings
+import org.obd.graphs.bl.extra.EVENT_VEHICLE_STATUS_IGNITION_OFF
 import org.obd.graphs.bl.extra.vehicleStatusMetricsProcessor
-import org.obd.graphs.bl.gps.gpsMetricsEmitter
-import org.obd.graphs.bl.trip.tripManager
-import org.obd.graphs.integrations.gcp.gdrive.TripLogDriveManager
-import org.obd.graphs.language.LanguageManager
-import org.obd.graphs.preferences.PREFERENCE_SCREEN_KEY_DTC
+import org.obd.graphs.bl.query.Query
+import org.obd.graphs.getContext
+import org.obd.graphs.getSerializableCompat
+import org.obd.graphs.preferences.PREFERENCE_SCREEN_KEY
+import org.obd.graphs.preferences.PREFS_CONNECTION_TYPE_CHANGED_EVENT
+import org.obd.graphs.preferences.PreferencesFragment
 import org.obd.graphs.preferences.setPreferencesContext
-import org.obd.graphs.preferences.trips.TripLogListDialogFragment
+import org.obd.graphs.profile.PROFILE_CHANGED_EVENT
 import org.obd.graphs.profile.profile
+import org.obd.graphs.registerReceiver
 import org.obd.graphs.sendBroadcastEvent
 import org.obd.graphs.setActivityContext
-import org.obd.graphs.theme.ThemeManager
-import org.obd.graphs.ui.BackupManager
-import org.obd.graphs.ui.CustomPidsBackupManager
-import org.obd.graphs.ui.common.COLOR_PHILIPPINE_GREEN
+import org.obd.graphs.ui.common.toast
 import org.obd.graphs.ui.withDataLogger
-import org.obd.graphs.wizard.SetupWizardActivity
-import org.obd.graphs.wizard.SetupWizardManager
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
 const val LOG_TAG = "MainActivity"
 
+/**
+ * The phone app is a settings screen: adapter connection, PID registry and vehicle profile. The dashboard
+ * itself is drawn on Android Auto. The floating button connects to the adapter, which is how the connection
+ * settings are tried out without a head unit.
+ */
 class MainActivity :
     AppCompatActivity(),
-    EasyPermissions.PermissionCallbacks {
-
-    internal lateinit var statusPanel: StatusPanel
+    EasyPermissions.PermissionCallbacks,
+    PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
     internal val screenLockManager = ScreenLockManager(this)
-    internal lateinit var backupManager: BackupManager
-    internal lateinit var customPidsBackupManager: CustomPidsBackupManager
 
-    internal lateinit var tripLogDriveManager: TripLogDriveManager
+    private val connectButton: FloatingActionButton by lazy { findViewById(R.id.connect_btn) }
 
-    internal lateinit var appBarConfiguration: AppBarConfiguration
-
-    val drawerLayout: DrawerLayout by lazy { findViewById(R.id.drawer_layout) }
-
-    private var isAppReady = false
-    private var pendingNavigateTo: String? = null
-
-    internal var activityBroadcastReceiver =
+    private val broadcastReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(
                 context: Context?,
@@ -100,125 +104,38 @@ class MainActivity :
             }
         }
 
-    override fun attachBaseContext(newBase: Context) {
-        val localizedContext = LanguageManager.getLocalizedContext(newBase)
-        super.attachBaseContext(localizedContext)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        setupStrictMode()
         setActivityContext(this)
         setPreferencesContext(this)
-        ThemeManager.applyStoredTheme(this)
-
-        val splashScreen = installSplashScreen()
-
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-
-        splashScreen.setKeepOnScreenCondition { !isAppReady }
-
-        pendingNavigateTo = intent?.getStringExtra(EXTRA_NAVIGATE_TO)
-
-        runWizardFlow()
-
         setContentView(R.layout.activity_main)
-
-        screen.setupWindowManager(this)
-        this.appBarConfiguration = getAppBarConfiguration()
-
-        setupNavigationBar()
-        setupBottomBarNavigation()
-        setupNavigationViewNavigation()
-        setupBackPressHandling()
-        registerReceiver()
-        setupStatusPanel()
-        setupProgressBar()
+        setSupportActionBar(findViewById(R.id.toolbar))
 
         screenLockManager.setup()
         lifecycle.addObserver(screenLockManager)
-
-        supportActionBar?.hide()
-        backupManager = BackupManager(this)
-        customPidsBackupManager = CustomPidsBackupManager(this)
-        tripLogDriveManager = TripLogDriveManager.instance(getString(R.string.ANDROID_WEB_CLIENT_ID), activity = this, null)
-
-        setupFabButtons()
+        registerReceivers()
 
         if (savedInstanceState == null) {
-            setupExceptionHandler()
-            setupVehicleProfiles()
+            Thread.setDefaultUncaughtExceptionHandler(ExceptionHandler())
+            profile.init(
+                versionCode = BuildConfig.VERSION_CODE,
+                defaultProfile = resources.getString(R.string.DEFAULT_PROFILE),
+                versionName = BuildConfig.VERSION_NAME
+            )
+            profile.setupProfiles(forceOverrideRecommendation = false)
             Network.setupConnectedNetworksCallback()
-            setupMetricsProcessors()
-            displayAppSignature(this)
-            navigateToLastVisitedScreen()
+            DataLoggerRepository.observe(vehicleStatusMetricsProcessor)
             AutoConnect.schedule(this)
+            showPreferences(null)
         }
 
-        isAppReady = true
-    }
+        connectButton.setOnClickListener { toggleConnection() }
+        supportFragmentManager.addOnBackStackChangedListener { updateStatus() }
+        updateStatus()
 
-    private fun setupStatusPanel() {
-        statusPanel = StatusPanel(this)
-        statusPanel.setup()
-    }
-
-    private fun setupFabButtons() {
-        FabButtons.setupSpeedDialView(this)
-
-        if (DataLoggerRepository.isRunning()) {
-            val connectBtn = FabButtons.view(this).connectFab
-
-            connectBtn.setOnClickListener {
-                if (DataLoggerRepository.isRunning()) {
-                    withDataLogger {
-                        Log.i("Fragment", "Stop data logging")
-                        stop()
-                    }
-                }
-            }
-
-            connectBtn.backgroundTintList =
-                ContextCompat.getColorStateList(
-                    this,
-                    if (DataLoggerRepository.isRunning()) {
-                        org.obd.graphs.commons.R.color.cardinal
-                    } else {
-                        org.obd.graphs.commons.R.color.philippine_green
-                    }
-                )
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        pendingNavigateTo = intent.getStringExtra(EXTRA_NAVIGATE_TO)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        screen.setupWindowManager(this)
-        screen.changeScreenBrightness(this, 1f)
-
-        // Language may have been changed by the setup wizard while this Activity was paused underneath it.
-        val storedLanguage = LanguageManager.getStoredLanguage(this)
-        if (storedLanguage.isNotEmpty() && resources.configuration.locales[0].language != storedLanguage) {
-            recreate()
-        }
-
-        pendingNavigateTo?.let {
-            pendingNavigateTo = null
-            handleShortcutNavigation(it)
-        }
-    }
-
-    private fun handleShortcutNavigation(target: String) {
-        when (target) {
-            "graph" -> navigateToScreen(R.id.nav_graph)
-            "gauge" -> navigateToScreen(R.id.nav_gauge)
-            "trip_logs" -> TripLogListDialogFragment().show(supportFragmentManager, null)
-            "trip_upload" -> TripLogListDialogFragment(enableDeleteButtons = false).show(supportFragmentManager, null)
-            NAVIGATE_TO_DTC -> navigateToPreferencesScreen(PREFERENCE_SCREEN_KEY_DTC, openDialog = true)
+        if (Permissions.isAnyPermissionMissing(this)) {
+            Permissions.showPermissionOnboarding(this)
         }
     }
 
@@ -227,34 +144,172 @@ class MainActivity :
         sendBroadcastEvent(MAIN_ACTIVITY_EVENT_PAUSE)
     }
 
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            screen.hideSystemUI(this)
-        }
-    }
-
     override fun onDestroy() {
-        super.onDestroy()
-        unregisterReceiver()
+        unregisterReceiver(broadcastReceiver)
+        unregisterReceiver(DataLoggerRepository.broadcastReceivers())
         sendBroadcastEvent(MAIN_ACTIVITY_EVENT_DESTROYED)
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        if (NavigationRouter.getPreferences().hideToolbarLandscape) {
-            val hide = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
-            Toolbar.hide(this, hide)
-        }
+        super.onDestroy()
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        val navController =
-            (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController
-        return NavigationUI.navigateUp(
-            navController,
-            appBarConfiguration
-        ) || super.onSupportNavigateUp()
+        if (supportFragmentManager.backStackEntryCount > 0) {
+            supportFragmentManager.popBackStack()
+            return true
+        }
+        return super.onSupportNavigateUp()
+    }
+
+    // A preference with app:fragment (the CAN header table) opens that fragment in place of the settings.
+    override fun onPreferenceStartFragment(
+        caller: PreferenceFragmentCompat,
+        pref: Preference
+    ): Boolean {
+        val fragment = supportFragmentManager.fragmentFactory.instantiate(classLoader, pref.fragment ?: return false)
+        fragment.arguments = pref.extras
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.settings_container, fragment)
+            .addToBackStack(pref.key)
+            .commit()
+        return true
+    }
+
+    /** Shows the settings screen with the given root key (null = the top level). Showing the current screen again reloads it. */
+    fun showPreferences(rootKey: String?) {
+        val current = supportFragmentManager.findFragmentById(R.id.settings_container)
+        val sameScreen = current is PreferencesFragment && current.arguments?.getString(PREFERENCE_SCREEN_KEY) == rootKey
+        val fragment = PreferencesFragment().apply { arguments = bundleOf(PREFERENCE_SCREEN_KEY to rootKey) }
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.settings_container, fragment)
+            .apply { if (rootKey != null && !sameScreen) addToBackStack(rootKey) }
+            .commit()
+    }
+
+    private fun toggleConnection() {
+        if (DataLoggerRepository.status() == WorkflowStatus.Connecting || DataLoggerRepository.status() == WorkflowStatus.Connected) {
+            Log.i(LOG_TAG, "Stopping data logging")
+            withDataLogger { stop() }
+        } else {
+            Log.i(LOG_TAG, "Starting data logging")
+            withDataLogger { start(Query.instance()) }
+        }
+    }
+
+    private fun updateStatus() {
+        val settings = dataLoggerSettings.instance().adapter
+        val state =
+            when (DataLoggerRepository.status()) {
+                WorkflowStatus.Connecting -> getString(R.string.main_activity_status_connecting)
+                WorkflowStatus.Connected -> getString(R.string.main_activity_status_connected)
+                else -> getString(R.string.main_activity_status_disconnected)
+            }
+        supportActionBar?.subtitle = "${settings.connectionType} · ${profile.getCurrentProfileName().substringBefore("(").trim()} · $state"
+        supportActionBar?.setDisplayHomeAsUpEnabled(supportFragmentManager.backStackEntryCount > 0)
+
+        val connected = DataLoggerRepository.status() != WorkflowStatus.Disconnected
+        connectButton.backgroundTintList =
+            ContextCompat.getColorStateList(
+                this,
+                if (connected) org.obd.graphs.commons.R.color.cardinal else org.obd.graphs.commons.R.color.philippine_green
+            )
+        connectButton.contentDescription =
+            getString(if (connected) R.string.main_activity_disconnect else R.string.main_activity_connect)
+    }
+
+    private fun receive(intent: Intent?) {
+        when (intent?.action) {
+            DATA_LOGGER_CONNECTING_EVENT -> updateStatus()
+            DATA_LOGGER_CONNECTED_EVENT -> {
+                toast(org.obd.graphs.commons.R.string.main_activity_toast_connection_established)
+                updateStatus()
+            }
+            DATA_LOGGER_STOPPED_EVENT -> {
+                toast(org.obd.graphs.commons.R.string.main_activity_toast_connection_stopped)
+                updateStatus()
+            }
+            DATA_LOGGER_ERROR_EVENT -> {
+                toast(org.obd.graphs.commons.R.string.main_activity_toast_connection_error)
+                updateStatus()
+            }
+            DATA_LOGGER_NO_NETWORK_EVENT -> {
+                toast(org.obd.graphs.commons.R.string.main_activity_toast_connection_no_network)
+                updateStatus()
+            }
+            DATA_LOGGER_ERROR_CONNECT_EVENT -> toast(org.obd.graphs.commons.R.string.main_activity_toast_connection_connect_error)
+            DATA_LOGGER_BLE_NOT_REACHABLE -> toast(org.obd.graphs.commons.R.string.main_activity_toast_connection_ble_not_reachable)
+            DATA_LOGGER_ADAPTER_NOT_SET_EVENT -> {
+                screenLockManager.dismiss()
+                showPreferences(PREFERENCE_SCREEN_KEY_CONNECTION)
+                toast(org.obd.graphs.commons.R.string.main_activity_toast_adapter_is_not_selected)
+            }
+            DATA_LOGGER_WIFI_NOT_CONNECTED -> {
+                startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+                toast(org.obd.graphs.commons.R.string.main_activity_toast_connection_wifi_not_connected)
+            }
+            DATA_LOGGER_WIFI_INCORRECT -> {
+                startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+                toast(org.obd.graphs.commons.R.string.main_activity_toast_connection_wifi_incorrect_ssid)
+            }
+
+            SCREEN_UNLOCK_PROGRESS_EVENT -> screenLockManager.dismiss()
+            SCREEN_LOCK_PROGRESS_EVENT -> {
+                val screenLock = intent.getSerializableCompat<ScreenLock>() ?: ScreenLock()
+                screenLockManager.show(screenLock) { sendBroadcastEvent(SCREEN_LOCK_DIALOG_CANCELLED_EVENT, screenLock) }
+            }
+
+            REQUEST_PERMISSIONS_BT -> Permissions.requestBluetoothPermissions(this)
+            REQUEST_NOTIFICATION_PERMISSIONS -> Permissions.requestNotificationPermissions(this)
+            REQUEST_LOCATION_PERMISSIONS -> Permissions.requestLocationPermissions(this)
+
+            PREFS_CONNECTION_TYPE_CHANGED_EVENT, PROFILE_CHANGED_EVENT -> updateStatus()
+
+            UsbManager.ACTION_USB_DEVICE_DETACHED -> {
+                (intent.extras?.get(UsbManager.EXTRA_DEVICE) as? UsbDevice)?.let { toast(R.string.pref_usb_device_detached, it.productName ?: "") }
+                withDataLogger { stop() }
+            }
+            USB_DEVICE_ATTACHED_EVENT -> {
+                (intent.extras?.get(UsbManager.EXTRA_DEVICE) as? UsbDevice)?.let { toast(R.string.pref_usb_device_attached, it.productName ?: "") }
+            }
+
+            EVENT_VEHICLE_STATUS_IGNITION_OFF -> {
+                if (dataLoggerSettings.instance().vehicleStatusDisconnectWhenOff) {
+                    Log.i(LOG_TAG, "Received vehicle status OFF event. Closing the session.")
+                    withDataLogger { stop() }
+                }
+            }
+        }
+    }
+
+    private fun registerReceivers() {
+        registerReceiver(this, broadcastReceiver) {
+            it.addAction(DATA_LOGGER_CONNECTING_EVENT)
+            it.addAction(DATA_LOGGER_CONNECTED_EVENT)
+            it.addAction(DATA_LOGGER_STOPPED_EVENT)
+            it.addAction(DATA_LOGGER_ERROR_EVENT)
+            it.addAction(DATA_LOGGER_NO_NETWORK_EVENT)
+            it.addAction(DATA_LOGGER_ERROR_CONNECT_EVENT)
+            it.addAction(DATA_LOGGER_BLE_NOT_REACHABLE)
+            it.addAction(DATA_LOGGER_ADAPTER_NOT_SET_EVENT)
+            it.addAction(DATA_LOGGER_WIFI_NOT_CONNECTED)
+            it.addAction(DATA_LOGGER_WIFI_INCORRECT)
+            it.addAction(SCREEN_LOCK_PROGRESS_EVENT)
+            it.addAction(SCREEN_UNLOCK_PROGRESS_EVENT)
+            it.addAction(REQUEST_PERMISSIONS_BT)
+            it.addAction(REQUEST_NOTIFICATION_PERMISSIONS)
+            it.addAction(REQUEST_LOCATION_PERMISSIONS)
+            it.addAction(PREFS_CONNECTION_TYPE_CHANGED_EVENT)
+            it.addAction(PROFILE_CHANGED_EVENT)
+            it.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
+            it.addAction(USB_DEVICE_ATTACHED_EVENT)
+            it.addAction(EVENT_VEHICLE_STATUS_IGNITION_OFF)
+        }
+
+        // Reloads the PID registry when the profile or the module list changes.
+        registerReceiver(this, DataLoggerRepository.broadcastReceivers()) {
+            it.addAction(MODULES_LIST_CHANGED_EVENT)
+            it.addAction(PROFILE_CHANGED_EVENT)
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -270,7 +325,6 @@ class MainActivity :
         requestCode: Int,
         perms: MutableList<String>
     ) {
-        runWizardFlow()
     }
 
     override fun onPermissionsDenied(
@@ -281,118 +335,11 @@ class MainActivity :
             AppSettingsDialog.Builder(this).build().show()
         }
     }
+}
 
-    private fun setupExceptionHandler() {
-        Thread.setDefaultUncaughtExceptionHandler(ExceptionHandler())
-    }
+const val PREFERENCE_SCREEN_KEY_CONNECTION = "pref.adapter.connection"
 
-    fun getAppBarConfiguration(): AppBarConfiguration =
-        AppBarConfiguration(
-            setOf(
-                R.id.nav_giulia,
-                R.id.nav_graph,
-                R.id.nav_gauge
-            ),
-            drawerLayout
-        )
-
-    private fun setupStrictMode() {
-        if (BuildConfig.DEBUG) {
-            StrictMode.setThreadPolicy(
-                ThreadPolicy
-                    .Builder()
-                    .detectAll()
-                    .penaltyLog()
-                    .penaltyFlashScreen()
-                    .build()
-            )
-
-            StrictMode.setVmPolicy(
-                VmPolicy
-                    .Builder()
-                    .detectAll()
-                    .penaltyLog()
-                    .build()
-            )
-        }
-    }
-
-    private fun setupVehicleProfiles() {
-        profile.init(
-            versionCode = BuildConfig.VERSION_CODE,
-            defaultProfile = resources.getString(R.string.DEFAULT_PROFILE),
-            versionName = BuildConfig.VERSION_NAME
-        )
-
-        profile.setupProfiles(forceOverrideRecommendation = false)
-    }
-
-    private fun setupMetricsProcessors() {
-        DataLoggerRepository
-            .observe(dragRacingMetricsProcessor)
-            .observe(tripManager)
-            .observe(vehicleStatusMetricsProcessor)
-            .observe(gpsMetricsEmitter)
-    }
-
-    private fun runWizardFlow() {
-        // Fresh installs pick a language as the wizard's first step instead - asking here too would be redundant.
-        if (!LanguageManager.isLanguageSelected(this) && !SetupWizardManager.shouldShowWizard(this)) {
-            LanguageManager.showLanguageSelectionDialog(this) { localeTag ->
-                DataLoggerRepository.updateTranslations(localeTag)
-                recreate()
-            }
-            return
-        }
-
-        // Fresh installs grant permissions as a wizard step instead - asking here too would be redundant,
-        // as would asking again right after the wizard, where the user may have just declined them.
-        if (Permissions.isAnyPermissionMissing(this) &&
-            !SetupWizardManager.shouldShowWizard(this) &&
-            !SetupWizardManager.completedInThisSession
-        ) {
-            Permissions.showPermissionOnboarding(this, onDeclined = {
-            })
-            return
-        }
-
-        if (SetupWizardManager.shouldShowWizard(this)) {
-            startActivity(Intent(this, SetupWizardActivity::class.java))
-            return
-        }
-    }
-
-    private fun setupBackPressHandling() {
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                        drawerLayout.closeDrawer(GravityCompat.START)
-                    } else {
-                        isEnabled = false
-                        onBackPressedDispatcher.onBackPressed()
-                        isEnabled = true
-                    }
-                }
-            }
-        )
-    }
-
-    private fun setupProgressBar() {
-        if (DataLoggerRepository.isRunning()) {
-            progressBar {
-                it.visibility = View.VISIBLE
-                it.indeterminateDrawable.colorFilter =
-                    PorterDuffColorFilter(
-                        COLOR_PHILIPPINE_GREEN,
-                        PorterDuff.Mode.SRC_IN
-                    )
-            }
-        } else {
-            progressBar {
-                it.visibility = View.GONE
-            }
-        }
-    }
+/** Opens (or reloads) the settings screen with the given root key. Preferences call it after a change to refresh their screen. */
+fun navigateToPreferencesScreen(navigateToPrefKey: String) {
+    (getContext() as? MainActivity)?.showPreferences(navigateToPrefKey)
 }

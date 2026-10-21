@@ -16,14 +16,19 @@ It is a fork of [tzebrowski/ObdGraphs](https://github.com/tzebrowski/ObdGraphs) 
 
 | Part | State |
 |---|---|
-| Classic dashboard (Android Auto) | Implemented and rendered in tests, on mock data. Not yet run on a head unit. |
+| Classic dashboard (Android Auto) | Launches on the car's Android Auto screen (first drive, 2026-10-21). Rendered in tests on mock data; which dials show live values on the car is not yet recorded. |
 | BMW profile and PID file | Written. The DIDs come from BMW's ECU descriptions and are **not yet confirmed on the car**. |
-| BMW extended addressing (`6F1` + ECU byte) | In the ObdMetrics fork, unit-tested, not yet tried on the car. |
+| BMW extended addressing (`6F1` + ECU byte) | In the ObdMetrics fork, unit-tested. Whether the vLinker accepts `ATCEA` on the car is not yet confirmed. |
+| Adapter connection | Connects from the car, but lags. Not yet investigated; see the levers in [the tech design](doc/specs/classic-dashboard-tech.md#6-refresh-rate-budget-estimate-verify-in-phase-3). |
 | Phone app | Settings only (connection, adapter init, PIDs, profile) with a connect button. Checked on the emulator with the mock connection. |
-| Upstream ObdGraphs features | Removed on purpose (2026-10-21): Gauge / Giulia / Trip Info / Performance / Drag Racing screens, DTC, readiness, trips, Google Drive, the setup wizard. See `doc/specs/simplified-app.md`. |
+| Upstream ObdGraphs features | Removed on purpose after the first drive (2026-10-21): Gauge / Giulia / Trip Info / Performance / Drag Racing screens, DTC, readiness, trips, Google Drive, the setup wizard. Spec: [simplified-app.md](doc/specs/simplified-app.md). |
 
-Next step is a car spike: check that the vLinker accepts the extended-addressing AT commands and that one DDE value
-decodes. See phases in [the tech design](doc/specs/classic-dashboard-tech.md#5-phases).
+The simplified app lives on the `simplify-app` branch; `main` still carries the full upstream UI until the branch is
+merged.
+
+Next step is a drive with a logcat: confirm which DDE / EGS / 48 V DIDs answer, and find where the connection time
+goes (batching, the header switches of extended addressing, the probe PIDs). See phases in
+[the tech design](doc/specs/classic-dashboard-tech.md#5-phases).
 
 ## The Classic dashboard
 
@@ -92,10 +97,15 @@ AA cannot be installed side by side.
 ## Use
 
 1. In the phone app the profile **BMW G31 520d MHEV (BT,AA)** is selected by default; pick the vLinker as the
-   Bluetooth adapter under *Connection*. The round button connects to the adapter, to check the settings without the car.
+   Bluetooth adapter under *Connection*. The round button connects to the adapter, to check the settings without the car;
+   the toolbar shows the connection type, the profile and the state.
 2. In Android Auto, open G-Series Indicators: the Classic dashboard is the only screen. Its strip has connect /
-   disconnect and exit.
-3. Without the car: in a debug build set the connection type to **mock**. It answers every PID, so every dial moves.
+   disconnect and exit. With *Auto-connect when application is launched* on, it connects as soon as the paired
+   adapter is in range.
+3. The CAN header table (*Adapter settings → Initialization & Protocols → Manage Diagnostic CAN Request IDs*) holds the
+   ECUs the dashboard talks to: OBD-II on `7E0`, and DDE, EGS and the 48 V battery on `6F1` with their extended
+   addresses. *Discover* probes the car for modules that answer.
+4. Without the car: in a debug build set the connection type to **mock**. It answers every PID, so every dial moves.
 
 ## Repository layout
 
@@ -106,7 +116,7 @@ AA cannot be installed side by side.
 | `screen_renderer` | The Classic dashboard drawer, `renderer/classic/` |
 | `datalogger` | Adapter connections, the Classic query, the metrics collector; BMW PIDs in `src/main/resources/bmw_b47_mhev.json` |
 | `profile`, `common` | Upstream modules, trimmed |
-| `doc/specs` | One spec per feature, with mockups and renders in `img/` |
+| `doc/specs` | One spec per feature, with mockups and renders in `img/`; the DTC, Trip Info and Performance specs describe features that were removed |
 | `scripts` | `setup-local.sh`, the BMW PID generator `gen_bmw_pids.py`, mockup generators |
 
 ## Tests
@@ -120,7 +130,7 @@ AA cannot be installed side by side.
 ```
 
 ```bash
-./gradlew :profile:testDebugUnitTest :app:testGiuliaAADebugUnitTest
+./gradlew :profile:testDebugUnitTest :automotive:testDebugUnitTest :app:testGiuliaAADebugUnitTest
 ```
 
 ```bash
@@ -129,6 +139,7 @@ AA cannot be installed side by side.
 
 `ClassicRenderTest` draws the whole Classic screen on a real canvas into `screen_renderer/build/classic-render/`, which is
 the way to look at it without a head unit. `ClassicPidsTest` decodes every BMW formula with the app's script engine.
+`ClassicCarScreenTest` builds the Android Auto template with the Car App testing library.
 
 ## Documentation
 
@@ -144,7 +155,9 @@ The DIDs come from BMW's SGBD ECU descriptions, published as Markdown in
 ## Staying in sync with upstream
 
 `upstream` is `tzebrowski/ObdGraphs`. Merge `upstream/master` into `main`; in ObdMetrics, merge `upstream/v11.x` into
-`feat/bmw-extended-addressing`. Upstream does not know about the BMW changes, so conflicts are resolved here.
+`feat/bmw-extended-addressing`. Upstream does not know about the BMW changes, so conflicts are resolved here. Since the
+simplification most of upstream's app code no longer exists in this fork, so only changes to the surviving modules
+(`datalogger` connectors, `profile`, `common`) are worth taking over.
 
 ## Credits and licence
 

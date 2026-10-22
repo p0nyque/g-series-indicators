@@ -24,8 +24,8 @@ data class Adapter(
     @XmlPreference("pref.vehicle_settings.auto_connect_once_launched", "false", Boolean::class)
     var autoConnectEnabled: Boolean = false,
 
-    @XmlPreference("pref.adapter.id", "OBDII", String::class)
-    var deviceAddress: String = "OBDII",
+    @XmlPreference("pref.adapter.id", "", String::class)
+    var deviceAddress: String = "",
 
     @XmlPreference("pref.adapter.connection.type", "bluetooth", String::class)
     var connectionType: String = "bluetooth",
@@ -100,12 +100,6 @@ data class Adapter(
 
     @XmlPreference("pref.adapter.init.protocol", "AUTO", String::class)
     var initProtocol: String = "AUTO",
-
-    @XmlPreference("pref.adapter.init.sequence", "DEFAULT", String::class)
-    var initSequence: String = "DEFAULT",
-
-    @XmlPreference("pref.adapter.type", "DEFAULT", String::class)
-    var type: String = "DEFAULT",
 
     @XmlPreference("pref.adapter.reconnect.max_retry", "0", Int::class)
     var maxReconnectNum: Int = 0,

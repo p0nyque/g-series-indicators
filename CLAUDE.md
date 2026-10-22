@@ -398,8 +398,13 @@ These came out of DTC / readiness work that is gone from the app, but they descr
 ### Preferences & localization
 * Preference UI: `app/src/main/res/xml/preferences.xml` (Connection, Adapter init, Adapter advanced, PIDs, Profile, Debug). Code defaults in `Prefs.getBoolean(key, default)` should match the XML `android:defaultValue` — the XML value gets persisted once the settings screen is opened.
 * `preferences.xml` references custom preference classes by **fully-qualified name**, so renaming
-  one and missing the XML fails at *runtime*, not compile time. `assembleGiuliaAADebug` plus opening
-  the settings screen is the real check.
+  one and missing the XML fails at *runtime*, not compile time. `PreferencesXmlTest` (`:app` unit test) now loads
+  every such class; opening the settings screen is still the final check.
+* **One adapter path: generic ELM327** (spec `doc/specs/generic-elm327-adapter.md`). The "Adapter type" (VGate vLinker
+  MS) and "Init Sequence" settings were upstream's Alfa MS-CAN preset, not the user's vLinker; its ObdMetrics classes
+  (`org.obd.metrics.init.VgateVlinkerMs*`) do not exist in the fork, so it only ever changed protocol / error settings.
+  `adapterInit()` (`InitHeaders.kt`) builds the `Init` with ObdMetrics' default registry and sequence. The user's
+  vLinker = connection type `bluetooth` (Classic) + "Default"/generic path; don't reintroduce an adapter-type picker.
 * The connection type uses **two** arrays: `pref.connection_type_array` (persisted values, never
   localized or reordered) and `pref.connection_type_entries` (display labels). They are
   index-aligned, and `ConnectionTypeListPreference` drops `mock` in release builds by *index* to

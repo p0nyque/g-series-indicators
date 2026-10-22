@@ -178,14 +178,6 @@
                 android:title="@string/pref.adapter_delay_reset"
                 app:useSimpleSummaryProvider="true" />
 
-            <ListPreference
-                android:defaultValue="DEFAULT"
-                android:entries="@array/pref.init_sequence"
-                android:entryValues="@array/pref.init_sequence"
-                android:key="pref.adapter.init.sequence"
-                android:title="@string/pref.adapter_init_sequence"
-                app:useSimpleSummaryProvider="true" />
-
             <PreferenceCategory android:title="@string/pref.adapter.diagnostic_request_id.mapping.category">
                 <Preference
                     android:key="pref.adapter.init.manage_dri"
@@ -200,14 +192,6 @@
             android:summary="@string/pref_adapter_settings_summary"
             android:title="@string/pref.adapter.general_settings"
             app:singleLineTitle="false">
-
-            <org.obd.graphs.preferences.AdapterTypeListPreference
-                android:defaultValue="DEFAULT"
-                android:entries="@array/pref.adapter_type_entries"
-                android:entryValues="@array/pref.adapter_type_values"
-                android:key="pref.adapter.type"
-                android:title="@string/pref.adapter.type"
-                app:useSimpleSummaryProvider="true" />
 
             <PreferenceCategory android:title="@string/pref.adapter_error_handling">
                 <SwitchPreferenceCompat

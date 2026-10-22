@@ -21,6 +21,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.obd.graphs.DiagnosticMappingItem
+import org.obd.metrics.api.DefaultCanNetworkRegistry
+import org.obd.metrics.api.model.Init
+import org.obd.metrics.command.group.DefaultCommandGroup
 
 class InitHeadersTest {
     @Test
@@ -59,5 +62,27 @@ class InitHeadersTest {
         assertEquals(1, headers.size)
         assertEquals("6F1", headers.single().header)
         assertEquals("12", headers.single().extendedAddress)
+    }
+
+    @Test
+    fun `the adapter init is the generic ELM327 one built from the adapter settings`() {
+        val init =
+            adapterInit(
+                Adapter(initDelay = 500, delayAfterReset = 300, initProtocol = "CAN_11"),
+                listOf(DiagnosticMappingItem(1, "22", "6F1", "DDE", extendedAddress = "12", receiveAddress = "612"))
+            )
+
+        assertEquals(500L, init.delayAfterInit)
+        assertEquals(300L, init.delayAfterReset)
+        assertEquals(Init.Protocol.CAN_11, init.protocol)
+        assertEquals("12", init.headers.single().extendedAddress)
+        assertTrue(init.networkRegistry is DefaultCanNetworkRegistry)
+        assertTrue(init.sequence === DefaultCommandGroup.INIT)
+    }
+
+    @Test
+    fun `no Bluetooth Classic adapter is preselected`() {
+        assertEquals("bluetooth", Adapter().connectionType)
+        assertEquals("", Adapter().deviceAddress)
     }
 }

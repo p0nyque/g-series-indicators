@@ -25,15 +25,10 @@ import org.obd.graphs.*
 import org.obd.graphs.bl.datalogger.connectors.ConnectionManager
 import org.obd.graphs.bl.query.Query
 import org.obd.graphs.profile.PROFILE_CHANGED_EVENT
-import org.obd.metrics.api.CANNetworkRegistry
-import org.obd.metrics.api.DefaultCanNetworkRegistry
 import org.obd.metrics.api.Workflow
 import org.obd.metrics.api.WorkflowExecutionStatus
 import org.obd.metrics.api.model.*
 import org.obd.metrics.codec.formula.FormulaEvaluatorConfig
-import org.obd.metrics.command.Command
-import org.obd.metrics.command.group.CommandGroup
-import org.obd.metrics.command.group.DefaultCommandGroup
 import org.obd.metrics.diagnostic.Diagnostics
 import org.obd.metrics.diagnostic.Histogram
 import org.obd.metrics.diagnostic.Rate
@@ -241,58 +236,8 @@ internal class WorkflowOrchestrator internal constructor() {
     fun isSameQuery(query: Query) =
         ::currentQuery.isInitialized && query.getIDs() == currentQuery.getIDs()
 
-    private fun init(preferences: DataLoggerSettings = dataLoggerSettings.instance()) : Init {
-        val init  = Init.builder()
-            .delayAfterInit(preferences.adapter.initDelay)
-            .delayAfterReset(preferences.adapter.delayAfterReset)
-            .headers(initHeaders(DiagnosticRequestIDManager.getMappings()).toMutableList())
-            .protocol(Init.Protocol.valueOf(preferences.adapter.initProtocol))
-            .networkRegistry(networkRegistry(preferences.adapter.type))
-            .sequence(sequence(preferences.adapter.initSequence)).build()
-
-        return init
-    }
-
-    private fun networkRegistry(adapterType : String): CANNetworkRegistry {
-        Log.i(LOG_TAG,"Selected adapter type $adapterType")
-
-        return when (adapterType) {
-            "DEFAULT" -> {
-                DefaultCanNetworkRegistry()
-            }
-
-            "VGATE_VLINKER_MS" -> {
-                runCatching {
-                    val clazz = Class.forName("org.obd.metrics.init.VgateVlinkerMsCANNetworkRegistry")
-                    val defaultField = clazz.getDeclaredField("DEFAULT")
-                    defaultField.get(null) as CANNetworkRegistry
-                }.getOrElse { exception ->
-                    Log.e(LOG_TAG, "Reflection failed: ${exception.message}. Falling back to DefaultCanNetworkRegistry.")
-                    DefaultCanNetworkRegistry()
-                }
-            }
-
-            else -> {
-                DefaultCanNetworkRegistry()
-            }
-        }
-    }
-
-
-    private fun sequence(seqName : String): CommandGroup<out Command?> =
-        if (seqName == "DEFAULT") {
-            DefaultCommandGroup.INIT
-        } else {
-            try {
-                Log.i(LOG_TAG, "Loading init-sequence for: $seqName")
-                val className = "org.obd.metrics.init.VgateVlinkerMsSequence"
-                val field = Class.forName(className).getField(seqName)
-                field.get(null) as? CommandGroup<*> ?: DefaultCommandGroup.INIT
-            } catch (e: Exception) {
-                Log.e(LOG_TAG, "Failed loading init-sequence for: $seqName", e)
-                DefaultCommandGroup.INIT
-            }
-        }
+    private fun init(preferences: DataLoggerSettings = dataLoggerSettings.instance()): Init =
+        adapterInit(preferences.adapter, DiagnosticRequestIDManager.getMappings())
 
     private fun workflow() = Workflow.instance()
         .formulaEvaluatorConfig(

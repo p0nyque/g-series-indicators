@@ -103,7 +103,7 @@ only the Classic layout on the car, and do it on a branch.
 - [ ] DHU: not checked. The AVD only has Google's Android Auto *stub* (`AndroidAutoStubPrebuilt`), nothing listens on
       port 5277; install Android Auto from Play in the emulator and sign in first (CLAUDE.md, Build Environment).
 - [ ] Car: connection lag. Out of scope here; the levers are in `classic-dashboard-tech.md` §6 (batching, header
-      switches cost 6 AT commands per extended entry, the 13 probe PIDs in `ClassicPids.PROBES`).
+      switches cost 6 AT commands per extended entry, the 16 probe PIDs in `ClassicPids.PROBES`).
 
 ## Out of scope
 

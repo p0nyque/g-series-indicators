@@ -86,6 +86,20 @@ class ClassicPidsTest {
     }
 
     @Test
+    fun `standard OBD probes decode SAE J1979 scalings`() {
+        // F4xx = OBD-II PID xx over UDS 22. PID 70: support bits, commanded boost A, actual boost A, B pair, status.
+        val boost = "03" + "1900" + "12C0" + "0000" + "0000" + "00" // 200 kPa commanded, 150 kPa actual
+        mapOf(
+            40114L to ("82" to 90.0),
+            40115L to (boost to 1.5),
+            40116L to (boost to 2.0)
+        ).forEach { (id, reply) ->
+            assertTrue("PID $id is a probe", id in ClassicPids.PROBES)
+            assertEquals("PID $id", reply.second, decode(id, reply.first)!!.toDouble(), 0.001)
+        }
+    }
+
+    @Test
     fun `every BMW PID decodes a reply of its length`() {
         bmwIds.forEach { id ->
             val value = decode(id, "40".repeat(registry.findBy(id).length))

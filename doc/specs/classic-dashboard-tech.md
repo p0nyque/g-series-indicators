@@ -156,7 +156,7 @@ Same schema as `giulia_2.0_gme.json`, group `livedata`. Ids `40001`–`40099`. R
   | 40030 | 48 V SOC (%) | `BAT48` |
 
 - Phase 1 shipped placeholder DIDs `FD01`–`FD30`. Since 2026-10-19 the file holds the §4.3 candidates, plus the
-  alternates as **probe PIDs `40101`–`40113`** (`ClassicPids.PROBES`, priority 2, description "Probe: …"). Probes are
+  alternates as **probe PIDs `40101`–`40116`** (`ClassicPids.PROBES`, priority 2, description "Probe: …"). Probes are
   queried but never drawn. Drop them once the car shows which DID answers.
 
 ### 4.3 Candidate DIDs (from BMW SGBDs, 2026-10-19, not yet seen on the car)
@@ -167,9 +167,9 @@ Source: `SG_FUNKTIONEN` tables in `emdzej/ediabasx-docs-sgbd` (F16). Values are 
 
 | Id | Indicator | ECU (addr) | DID | Len | Formula → display | Alt |
 |---|---|---|---|---|---|---|
-| 40001 | Oil temp | DDE (`12`) | `4517` ITOEL | 2 | `uint16*0.01-100` °C | `4B60` same scaling; `428E` `uint16*0.00541695-100` |
-| 40002 | Boost actual | DDE | `4841` IPLAD | 2 | `uint16*0.15259022/1000` bar abs | `47F0` `(uint16-32767)/1000` |
-| 40003 | Boost target | DDE | `42C8` SPLAD | 2 | `uint16*0.09155413/1000` bar abs | `42C5` `(uint16-32767)/1000` |
+| 40001 | Oil temp | DDE (`12`) | `4517` ITOEL | 2 | `uint16*0.01-100` °C | `4B60` same scaling; `428E` `uint16*0.00541695-100`; `F45C` (OBD `5C`) `A-40` |
+| 40002 | Boost actual | DDE | `4841` IPLAD | 2 | `uint16*0.15259022/1000` bar abs | `47F0` `(uint16-32767)/1000`; `F470` (OBD `70`) `uint16(D,E)/32/100` |
+| 40003 | Boost target | DDE | `42C8` SPLAD | 2 | `uint16*0.09155413/1000` bar abs | `42C5` `(uint16-32767)/1000`; `F470` (OBD `70`) `uint16(B,C)/32/100` |
 | 40004 | EGT before DPF | DDE | `434A` TPFltUs_t | 2 | `uint16*0.1-3276.7` °C | `4502` `uint16*0.03128099-50` |
 | 40005 | Oil level | DDE | `4521` long-term average | 1 | `A*0.29296875` mm | `4523` short-term (same scaling); `422C` relative, raw |
 | 40006 | 48 V power | `BATT48` (`02`) | `D08C` | 28 | `int16(A,B)/100 * int16(C,D)/10 / 1000` kW, + = discharge (assist) | DDE `4B9E` SGE torque `uint16*0.5` Nm (sign unclear), `4BA3` SGE current `uint16*0.2` A |
@@ -179,7 +179,12 @@ Source: `SG_FUNKTIONEN` tables in `emdzej/ediabasx-docs-sgbd` (F16). Values are 
 | 40030 | 48 V SOC | `BATT48` (`02`) | `D08C` | 28 | byte 14 (`O`) % | — |
 
 Probe ids: `40101` `4B60`, `40102` `428E`, `40103` `47F0`, `40104` `42C5`, `40105` `4502`, `40106` `4523`, `40107` `422C`,
-`40108` `4B9E`, `40109` `4BA3`, `40110` `4B9F`, `40111` `467E`, `40112` EGS `6000`, `40113` DDE `4F7B`.
+`40108` `4B9E`, `40109` `4BA3`, `40110` `4B9F`, `40111` `467E`, `40112` EGS `6000`, `40113` DDE `4F7B`, `40114` `F45C`,
+`40115` / `40116` `F470` (actual / commanded boost from one reply).
+`F4xx` = the standard OBD-II PID `xx` read with UDS `22` from the DDE, SAE J1979 scaling (added 2026-10-28, from the
+`cauliflowermossgrape/idrive7-apps` UDS config). PID `70` = support bits, commanded boost A (`B,C`), actual boost A
+(`D,E`), the B pair, status; 1/32 kPa absolute. A 2020 EU diesel may not support `5C` / `70`: `01 40` / `01 60` say so.
+That repo reads `DA12` as 1 byte `A-48`; the 2-byte OBDb reply below says it is 2 bytes, as we decode it.
 `D08C` is 28 bytes; ObdMetrics bound every reply byte to a letter and threw past `Z`. Fixed in ObdMetrics
 (`ScriptEngineParameterBinder` ignores bytes past `Z`). The debug mock only fills `A`–`D`, so SOC shows 0 on the DHU.
 
@@ -266,3 +271,4 @@ Plain JUnit unless noted. Write the pure ones first; they pin the spec's numbers
 - [How to see charge status of the 48V battery? (g05.bimmerpost.com)](https://g05.bimmerpost.com/forums/showthread.php?t=2041045)
 - [emdzej/ediabasx-docs-sgbd: BMW SGBDs as Markdown](https://github.com/emdzej/ediabasx-docs-sgbd) (`D83BX7C0`, `BATT48`, `PCU48`, `SGE48V`, `GSZFB1`, `GSZFBCE`, `ZGW_SP18`)
 - [OBDb/BMW-5-Series: community signal definitions with real G30 replies](https://github.com/OBDb/BMW-5-Series)
+- [cauliflowermossgrape/idrive7-apps: iDrive 7 apps with a UDS config (`apps/*/app.json` → `config`)](https://github.com/cauliflowermossgrape/idrive7-apps)

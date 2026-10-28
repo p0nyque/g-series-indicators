@@ -175,7 +175,7 @@ static-layer bitmap per area size, `ClassicQueryStrategy` (`CLASSIC_QUERY`) over
 ### DID discovery (blocks M1, M3, M4, S2–S5, T1)
 
 1. ✅ Candidates from BMW's ECU descriptions (SGBDs), with alternates: tech design §4.3. The DIDs above are the
-   first choice. Alternates are queried as probe PIDs `40101`–`40113` (never drawn).
+   first choice. Alternates are queried as probe PIDs `40101`–`40116` (never drawn).
 2. One drive: see which DIDs answer (logcat `TX:` / `RX:`, or pick the probe PIDs in a Trip Info PID dialog).
    Cross-check each value against BimmerLink: same reading ± rounding.
 3. If a value is missing, log BimmerLink's requests (Android Bluetooth HCI snoop log).

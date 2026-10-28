@@ -43,6 +43,11 @@ probes = [
   probe(40111, "467E", 4, "Operating Mode\n(CoEOM_stOpModeAct)", 0, 4294967295, "", U32, it=True),
   probe(40112, "6000", 1, "Gearbox Oil Temp\n(EGS 6000)", 40, 140, "C", "A-40", can="EGS", it=True),
   probe(40113, "4F7B", 1, "Gearbox Oil Temp\n(DDE Tra_tOil)", 40, 140, "C", "A-40", it=True),
+  # F4xx = the standard OBD-II PID xx over UDS 22, SAE J1979 scaling (tech design §4.3).
+  probe(40114, "F45C", 1, "Oil Temp\n(OBD 5C)", 50, 150, "C", "A-40", it=True),
+  # PID 70: A support bits, B-C commanded boost A, D-E actual boost A, ... (1/32 kPa absolute).
+  probe(40115, "F470", 10, "Boost Actual\n(OBD 70)", 1.0, 3.0, "bar", r3("(D*256+E)*0.03125/100")),
+  probe(40116, "F470", 10, "Boost Target\n(OBD 70)", 1.0, 3.0, "bar", r3("(B*256+C)*0.03125/100")),
 ]
 json.dump({"metadata": [], "livedata": main + probes}, open(sys.argv[1], "w"), indent=2, ensure_ascii=False)
 open(sys.argv[1], "a").write("\n")

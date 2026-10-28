@@ -51,7 +51,7 @@ object ClassicPids {
      * Alternative DIDs for the same quantities, queried but never drawn, so one drive shows which of them answer
      * (pick them in a Trip Info / Gauge PID dialog, or read TX/RX in logcat). Remove once the real DIDs are known.
      */
-    val PROBES: Set<Long> = (40101L..40113L).toSet()
+    val PROBES: Set<Long> = (40101L..40116L).toSet()
 
     val ALL: Set<Long> =
         setOf(

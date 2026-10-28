@@ -356,6 +356,52 @@
       "overrides": {
         "batchEnabled": false
       }
+    },
+    {
+      "id": "40114",
+      "mode": "22",
+      "pid": "F45C",
+      "length": 1,
+      "description": "Probe: Oil Temp\n(OBD 5C)",
+      "min": 50,
+      "max": 150,
+      "units": "C",
+      "priority": 2,
+      "formula": "A-40",
+      "type": "INT",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40115",
+      "mode": "22",
+      "pid": "F470",
+      "length": 10,
+      "description": "Probe: Boost Actual\n(OBD 70)",
+      "min": 1.0,
+      "max": 3.0,
+      "units": "bar",
+      "priority": 2,
+      "formula": "parseFloat(((D*256+E)*0.03125/100).toFixed(3))",
+      "overrides": {
+        "batchEnabled": false
+      }
+    },
+    {
+      "id": "40116",
+      "mode": "22",
+      "pid": "F470",
+      "length": 10,
+      "description": "Probe: Boost Target\n(OBD 70)",
+      "min": 1.0,
+      "max": 3.0,
+      "units": "bar",
+      "priority": 2,
+      "formula": "parseFloat(((B*256+C)*0.03125/100).toFixed(3))",
+      "overrides": {
+        "batchEnabled": false
+      }
     }
   ]
 }

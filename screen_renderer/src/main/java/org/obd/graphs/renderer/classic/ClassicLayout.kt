@@ -26,6 +26,11 @@ internal const val MAIN_BAND = 0.55f
 internal const val SUB_BAND = 0.32f
 internal const val STRIP_BAND = 0.13f
 
+// Tall areas: main dials 2 x 2, sub-dials 3 x 2, a thinner strip.
+internal const val STACKED_MAIN_BAND = 0.55f
+internal const val STACKED_SUB_BAND = 0.35f
+internal const val STACKED_GAIN = 1.05f
+
 internal const val MAIN_START_ANGLE = -120f
 internal const val MAIN_SWEEP_ANGLE = 240f
 internal const val SUB_START_ANGLE = -45f
@@ -83,45 +88,72 @@ internal data class ClassicLayout(
     val stripBand: ClassicBox,
     val main: List<ClassicDialPlace>,
     val sub: List<ClassicDialPlace>,
-    val lamp: ClassicBox
+    val lamp: ClassicBox,
+    // Tall areas (AA side panel): main dials 2 x 2, sub-dials in two rows of three.
+    val stacked: Boolean = false
 ) {
     companion object {
+        /**
+         * One row of main dials and one of sub-dials; on a tall area (Android Auto's side panel on a widescreen)
+         * main dials 2 x 2 and sub-dials 3 x 2 instead, when that makes the main dials at least
+         * [STACKED_GAIN] larger (doc/specs/classic-dashboard.md, "Tall areas").
+         */
         fun of(
             area: ClassicBox,
             mainCount: Int = 4,
             subCount: Int = 6
         ): ClassicLayout {
+            val rows = build(area, mainCount, subCount, mainRows = 1, subRows = 1, MAIN_BAND, SUB_BAND)
+            val stacked = build(area, mainCount, subCount, mainRows = 2, subRows = 2, STACKED_MAIN_BAND, STACKED_SUB_BAND)
+            return if (stacked.main[0].radius > rows.main[0].radius * STACKED_GAIN) stacked.copy(stacked = true) else rows
+        }
+
+        private fun build(
+            area: ClassicBox,
+            mainCount: Int,
+            subCount: Int,
+            mainRows: Int,
+            subRows: Int,
+            mainShare: Float,
+            subShare: Float
+        ): ClassicLayout {
             val w = area.width
             val h = area.height
             val ts = min(w / 800f, h / 480f)
 
-            val mainBand = ClassicBox(area.left, area.top, area.right, area.top + h * MAIN_BAND)
-            val subBand = ClassicBox(area.left, mainBand.bottom, area.right, mainBand.bottom + h * SUB_BAND)
+            val mainBand = ClassicBox(area.left, area.top, area.right, area.top + h * mainShare)
+            val subBand = ClassicBox(area.left, mainBand.bottom, area.right, mainBand.bottom + h * subShare)
             val stripBand = ClassicBox(area.left, subBand.bottom, area.right, area.bottom)
 
-            val mainCell = w / mainCount
-            val diameter = min(mainCell, mainBand.height) * 0.94f
+            val mainCols = (mainCount + mainRows - 1) / mainRows
+            val mainCell = w / mainCols
+            val mainRowHeight = mainBand.height / mainRows
+            val diameter = min(mainCell, mainRowHeight) * 0.94f
             val mainRadius = diameter / 2 - diameter * 0.035f
-            val mainCy = mainBand.top + mainBand.height / 2 + h * 0.005f
             val main =
                 (0 until mainCount).map {
-                    val cell = ClassicBox(area.left + mainCell * it, mainBand.top, area.left + mainCell * (it + 1), mainBand.bottom)
-                    ClassicDialPlace(cell.left + mainCell / 2, mainCy, mainRadius, mainRadius / MAIN_UNIT_RADIUS, cell)
+                    val top = mainBand.top + mainRowHeight * (it / mainCols)
+                    val left = area.left + mainCell * (it % mainCols)
+                    val cell = ClassicBox(left, top, left + mainCell, top + mainRowHeight)
+                    ClassicDialPlace(left + mainCell / 2, top + mainRowHeight / 2 + h * 0.005f / mainRows, mainRadius, mainRadius / MAIN_UNIT_RADIUS, cell)
                 }
 
-            val subCell = w / subCount
-            val subRadius = min(subCell * 0.48f, subBand.height * 0.42f)
-            val subCy = subBand.top + subBand.height * 0.2f + subRadius
+            val subCols = (subCount + subRows - 1) / subRows
+            val subCell = w / subCols
+            val subRowHeight = subBand.height / subRows
+            val subRadius = min(subCell * 0.48f, subRowHeight * 0.42f)
             val sub =
                 (0 until subCount).map {
-                    val cell = ClassicBox(area.left + subCell * it, subBand.top, area.left + subCell * (it + 1), subBand.bottom)
+                    val top = subBand.top + subRowHeight * (it / subCols)
+                    val left = area.left + subCell * (it % subCols)
+                    val cell = ClassicBox(left, top, left + subCell, top + subRowHeight)
                     ClassicDialPlace(
-                        cx = cell.left + subCell / 2,
-                        cy = subCy,
+                        cx = left + subCell / 2,
+                        cy = top + subRowHeight * 0.2f + subRadius,
                         radius = subRadius,
                         k = subRadius / SUB_UNIT_RADIUS,
                         cell = cell,
-                        labelY = subBand.top + subBand.height * 0.11f
+                        labelY = top + subRowHeight * 0.11f
                     )
                 }
 

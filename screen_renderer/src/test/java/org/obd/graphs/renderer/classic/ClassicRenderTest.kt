@@ -107,6 +107,39 @@ class ClassicRenderTest {
     private val aaFull = ClassicBox(12f, 90f, 788f, 390f)
     private val aaSplit = ClassicBox(22f, 10f, 464f, 352f)
 
+    // The car (G31 LCI): the DHU set up as an 8:3 widescreen, 12.3" (1080p video cropped to 1920 x 720) and the
+    // smaller panel (720p cropped to 1280 x 480), dpi 160. Areas AA gave the app, as logged by SurfaceController.
+    private val carAreas =
+        mapOf(
+            "car-1920x720-full" to ClassicBox(116f, 10f, 1908f, 606f),
+            "car-1920x720-home-panel" to ClassicBox(1216f, 10f, 1804f, 658f),
+            "car-1920x720-beside-spotify" to ClassicBox(116f, 10f, 1284f, 606f),
+            "car-1920x720-beside-spotify-tall" to ClassicBox(116f, 10f, 1284f, 682f),
+            "car-1280x480-full" to ClassicBox(102f, 10f, 1268f, 446f),
+            "car-1280x480-beside-media" to ClassicBox(102f, 10f, 848f, 370f),
+            "car-1280x480-home-panel" to ClassicBox(792f, 10f, 1178f, 422f)
+        )
+
+    @Test
+    fun `no dial text overlaps on the car's Android Auto areas`() {
+        val drawer = ClassicDrawer(RuntimeEnvironment.getApplication())
+        carAreas.forEach { (name, area) ->
+            val plan = drawer.plan(ClassicLayout.of(area))
+            val boxes = plan.boxes + plan.reserved
+            boxes.forEachIndexed { i, a ->
+                boxes.drop(i + 1).forEach { b -> assertFalse("$name: $a overlaps $b", a.overlaps(b)) }
+            }
+        }
+    }
+
+    @Test
+    fun `renders the car's Android Auto areas`() {
+        carAreas.forEach { (name, area) ->
+            val width = if (area.right > 1280f) 1920 else 1280
+            save(render(width, if (width == 1920) 720 else 480, running = true, area = area), "classic-$name.png")
+        }
+    }
+
     @Test
     fun `no dial text overlaps, from split screen to a wide screen`() {
         val drawer = ClassicDrawer(RuntimeEnvironment.getApplication())

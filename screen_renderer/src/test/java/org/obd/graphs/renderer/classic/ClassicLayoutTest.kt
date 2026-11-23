@@ -25,6 +25,14 @@ class ClassicLayoutTest {
     private val dhu = ClassicLayout.of(ClassicBox(0f, 0f, 800f, 480f))
     private val wide = ClassicLayout.of(ClassicBox(0f, 0f, 1920f, 720f))
 
+    // Android Auto on the car's 8:3 widescreen (DHU): the home-view side panel, and the app next to Spotify.
+    private val panel12 = ClassicLayout.of(ClassicBox(1216f, 10f, 1804f, 658f))
+    private val panel10 = ClassicLayout.of(ClassicBox(792f, 10f, 1178f, 422f))
+    private val beside12 = ClassicLayout.of(ClassicBox(116f, 10f, 1284f, 606f))
+    private val beside10 = ClassicLayout.of(ClassicBox(102f, 10f, 848f, 370f))
+    private val split = ClassicLayout.of(ClassicBox(22f, 10f, 464f, 352f))
+    private val all = listOf(dhu, wide, panel12, panel10, beside12, beside10, split)
+
     private val boost = CLASSIC_MAIN[2]
     private val starterGenerator = CLASSIC_SUB[4]
     private val intake = CLASSIC_SUB[0]
@@ -41,8 +49,42 @@ class ClassicLayoutTest {
     }
 
     @Test
+    fun `tall side panels stack the dials, every wider area keeps one row each`() {
+        listOf(panel12, panel10).forEach { assertTrue("${it.area}", it.stacked) }
+        listOf(dhu, wide, beside12, beside10, split).forEach { assertFalse("${it.area}", it.stacked) }
+    }
+
+    @Test
+    fun `stacking makes the main dials larger than one row would`() {
+        // One row of four in the 588 x 648 panel gives r ~ 64.
+        assertTrue("r = ${panel12.main[0].radius}", panel12.main[0].radius > 75f)
+        assertTrue("r = ${panel10.main[0].radius}", panel10.main[0].radius > 45f)
+    }
+
+    @Test
+    fun `stacked order reads left to right, top to bottom, engine above electrical`() {
+        val (oil, coolant, boost, gearbox) = panel12.main
+        assertEquals(oil.cy, coolant.cy, 0.01f)
+        assertEquals(boost.cy, gearbox.cy, 0.01f)
+        assertTrue(oil.cx < coolant.cx && boost.cx < gearbox.cx && oil.cy < boost.cy)
+        assertEquals(oil.cx, boost.cx, 0.01f)
+        val engine = panel12.sub.take(3)
+        val electrical = panel12.sub.drop(3)
+        engine.forEach { assertEquals(engine[0].cy, it.cy, 0.01f) }
+        electrical.forEach { assertTrue(it.cy > engine[0].cy) }
+    }
+
+    @Test
+    fun `stacked bands split the height 55, 35 and 10 percent`() {
+        val h = panel12.area.height
+        assertEquals(h * 0.55f, panel12.mainBand.height, 0.5f)
+        assertEquals(h * 0.35f, panel12.subBand.height, 0.5f)
+        assertEquals(h * 0.10f, panel12.stripBand.height, 0.5f)
+    }
+
+    @Test
     fun `every dial stays inside its own cell and the area`() {
-        listOf(dhu, wide).forEach { layout ->
+        all.forEach { layout ->
             layout.main.forEach {
                 assertTrue("main $it", it.cell.contains(it.bounds(ClassicKind.MAIN)))
                 assertTrue(layout.area.contains(it.bounds(ClassicKind.MAIN)))
@@ -57,7 +99,7 @@ class ClassicLayoutTest {
 
     @Test
     fun `no two dials overlap`() {
-        listOf(dhu, wide).forEach { layout ->
+        all.forEach { layout ->
             val boxes = layout.main.map { it.bounds(ClassicKind.MAIN) } + layout.sub.map { it.bounds(ClassicKind.SUB) }
             boxes.forEachIndexed { i, a ->
                 boxes.drop(i + 1).forEach { b -> assertFalse("$a overlaps $b", a.overlaps(b)) }

@@ -94,6 +94,41 @@ so the text is up to twice its designed size against the dial. Before 2026-11-23
 | Boost `TARGET` line | Fixed at 50 units under the centre | Lowered just enough to clear the scale ends |
 | 800 × 480, 1920 × 720 | — | Unchanged: no numeral left out, full labels |
 
+#### The car's areas (G31 LCI, emulated on the DHU, 2026-11-23)
+
+The G31 facelift has Live Cockpit Plus with a 10.25" Control Display as standard and Live Cockpit Professional with
+a 12.3" one as an option ([BMW Blog](https://www.bmwblog.com/2020/05/26/bmw-5-series-facelift/)); both are 8:3.
+BMW does not publish the Android Auto video setup, so the DHU ran as an 8:3 widescreen at dpi 160: 1080p cropped to
+1920 × 720 (`resolution = 1920x1080`, `marginheight = 360`) and 720p cropped to 1280 × 480 (`1280x720`, `240`). AA
+puts its rail on the left. Areas it gave the app (`SurfaceController` log):
+
+| Profile | Dashboard open | Next to Spotify (media card ~1/3) | AA home: side panel |
+|---|---|---|---|
+| 1920 × 720 | 1792 × 596 | 1168 × 596 (1168 × 672 with the action strip hidden) | 588 × 648 |
+| 1280 × 480 | 1166 × 436 | 746 × 360 | 386 × 412 |
+
+AA's layout button (bottom of the rail) cycles dashboard open → next to Spotify → home with the side panel. Google's
+design pages give breakpoints and 12 % side margins but no card ratio, so these numbers come from AA itself.
+
+All fit without overlap after the unit line got the same rule as the target line (lowered to clear the readout when
+the text floor makes it taller). Screenshots: DHU
+[1920 full](img/classic-dashboard-dhu-car-1920x720-full.png), [1920 next to Spotify](img/classic-dashboard-dhu-car-1920x720-spotify.png),
+[1920 home](img/classic-dashboard-dhu-car-1920x720-home.png),
+[1280 next to media](img/classic-dashboard-dhu-car-1280x480-media.png), [1280 home](img/classic-dashboard-dhu-car-1280x480-home.png);
+renders with values: `img/classic-dashboard-render-car-*.png`. The real areas come from the car: read the
+`Surface visible area changed` log line after a drive.
+
+#### Tall areas (2026-11-23, user's choice)
+
+| | Before | After |
+|---|---|---|
+| AA side panel (588 × 648, 386 × 412) | One row each: dials sized by the width (r ~ 65 / 42 px), two empty bands, labels wider than the faces | Main dials 2 × 2 (oil, coolant / boost, gearbox), sub-dials 3 × 2 (engine row above electrical), bands 55 / 35 / 10 %: r ~ 78 / 49 px |
+| Every wider area (800 × 480, 1920 × 720, next to Spotify, DHU split 442 × 342) | One row each | Unchanged |
+
+`ClassicLayout.of` builds both arrangements and stacks only when that makes the main dials at least 5 % larger, so
+the order still reads left to right, top to bottom, and nothing between the two flips on a small resize. No mockup:
+the renders and DHU screenshots above are the reference.
+
 Neighbouring sub-dial labels keep a gap of half the text size. Readouts reserve their widest text (scale ends, a value
 10 % under the scale, `--`), so numerals never sit where a reading can appear. Code: `ClassicTexts` (the text plan of
 the static layer; `ClassicDrawer.plan`). Split-screen render: [img/classic-dashboard-aa-split.png](img/classic-dashboard-aa-split.png).
@@ -210,6 +245,9 @@ See [classic-dashboard-tech.md §7](classic-dashboard-tech.md#7-tests). Small ar
 static text box and readout reservation with the bundled fonts and fails on any overlap at 800 × 480, the three
 Android Auto areas above and 1920 × 720 (it failed at 776 × 300 before the fix). It also pins that split screen keeps
 every label, readout and main-dial scale end, and that the designed sizes leave out no numeral and use no short label.
+Its `carAreas` are the AA areas from the table above, rendered to PNG with values. `ClassicLayoutTest` pins which areas
+stack (the side panels only), the stacked order and bands, larger main dials when stacked, and that no dial leaves
+its cell or overlaps another at every area.
 
 ## Risks and verification checklist
 
@@ -222,7 +260,9 @@ every label, readout and main-dial scale end, and that the designed sizes leave 
 - [ ] Regen lamp lights during a regen (EGT ~550–650 °C at the same time) and the distance resets afterwards.
 - [ ] DHU check at 800 × 480 and 1920 × 720; then on the car's screen (G31 LCI, ID7). Labels readable at a glance.
 - [x] DHU split screen (442 × 342) and full screen (776 × 376): no overlapping text (2026-11-23).
-- [ ] Split screen on the car's screen: the ID7 split area differs from the DHU's.
+- [x] DHU as the car's 8:3 widescreen (1920 × 720 and 1280 × 480): no overlapping text in any AA area, next to
+      Spotify included; side panels stacked 2 × 2 (2026-11-23).
+- [ ] The car's real AA areas from the `SurfaceController` log, added to `ClassicRenderTest`'s `carAreas`.
 - [ ] Frame rate with the glow on (blur), on the DHU and in the car.
 
 ## Out of scope

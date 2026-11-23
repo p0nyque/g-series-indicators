@@ -105,7 +105,7 @@ internal object ClassicTexts {
     ) {
         val (cx, cy, r, k) = place
         dial.fixed(text(label, cx, cy - 22 * k, 10 * k, ClassicFace.REGULAR, ClassicColors.DIM, 2 * k), maxWidth = 1.5f * r)
-        dial.fixed(text(slot.unit, cx, cy + 32 * k, 12 * k, ClassicFace.LIGHT, ClassicColors.DIM))
+        dial.fixed(text(slot.unit, cx, unitY(place), 12 * k, ClassicFace.LIGHT, ClassicColors.DIM))
         dial.reserve(widest(slot), cx, cy + 14 * k, 34 * k, ClassicFace.REGULAR)
         if (slot.targetPidId != null) {
             dial.reservePair(targetLabel, 9 * k, ClassicFace.REGULAR, 1.5f * k, ClassicReadings.formatTarget(slot.scale.max), 13 * k, ClassicFace.LIGHT, cx, targetY(place))
@@ -146,8 +146,16 @@ internal object ClassicTexts {
         val (_, cy, r, k) = place
         val numeral = ClassicLayout.textSize(15 * k)
         val endsBottom = ClassicLayout.y(cy, r - 30 * k, MAIN_START_ANGLE + MAIN_SWEEP_ANGLE) + 5.5f * k + numeral * DESCENT + 2 * PAD
+        val unitBottom = unitY(place) + ClassicLayout.textSize(12 * k) * DESCENT + 2 * PAD
         val px = max(ClassicLayout.textSize(9 * k), ClassicLayout.textSize(13 * k))
-        return max(cy + 50 * k, endsBottom + px * ASCENT + PAD)
+        return max(cy + 50 * k, max(endsBottom, unitBottom) + px * ASCENT + PAD)
+    }
+
+    /** Baseline of a main dial's unit: 32 units under the centre, lowered to clear the readout on small dials. */
+    fun unitY(place: ClassicDialPlace): Float {
+        val (_, cy, _, k) = place
+        val readoutBottom = cy + 14 * k + ClassicLayout.textSize(34 * k) * DESCENT + 2 * PAD
+        return max(cy + 32 * k, readoutBottom + ClassicLayout.textSize(12 * k) * ASCENT + PAD)
     }
 
     /** Readouts a slot can show at their widest: the scale ends, a value 10 % below the scale, no value. */

@@ -297,7 +297,13 @@ These came out of DTC / readiness work that is gone from the app, but they descr
   through `ClassicTexts` (a text plan: label spacing fitted to the cell, short labels `48V`/`GEN`/`12V`, numerals that
   collide dropped middle-first, readouts reserve their widest text); never draw dial text straight from the drawer
   again. `ClassicRenderTest` fails on any text-box overlap at these sizes; it needs Robolectric for real font widths.
-  Spec "Small areas". Reinstalling the APK during a DHU session gives "has encountered an unexpected error" in AA
+  Spec "Small areas". **"1920 × 720" is the panel, not the app's area**: AA on an 8:3 widescreen puts its rail on the
+  left (1792 × 596) and on its home view shows the app in a tall side panel (588 × 648; 386 × 412 on 1280 × 480).
+  Next to Spotify the app gets ~2/3: 1168 × 596. Tall side panels use the stacked layout (`ClassicLayout.stacked`: 2 × 2
+  main, 3 × 2 sub), chosen when it makes main dials ≥ 5 % larger; keep new layout rules area-driven like that, never by
+  a fixed size list. Emulate with a DHU `-c` config (`resolution = 1920x1080`, `marginheight = 360`). DHU `tap x y`
+  takes *window* coordinates: the 1920 × 1080 window is scaled to fit the Mac screen (0.766 on this Mac), so multiply
+  frame coordinates by the scale; check the `visible area` log to confirm a tap landed. Reinstalling the APK during a DHU session gives "has encountered an unexpected error" in AA
   (`DeadObjectException` in `CarApp.H`, no app crash): restart the DHU, it is not a bug.
 * The glow must sit *between* two static bitmaps (faces below, ticks / numerals above): over one flat bitmap it tinted
   the ticks and numerals orange. Draw order is the mockup script's.

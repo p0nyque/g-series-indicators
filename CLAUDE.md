@@ -152,6 +152,16 @@ Developer settings → Start head unit server, `adb forward tcp:5277 tcp:5277`, 
 Android Auto *stub* (`pm path com.google.android.projection.gearhead` → `AndroidAutoStubPrebuilt`); the real app has to be
 installed from Play and signed in before the head unit server exists. `adb logcat` shows `adbd: failed to connect to
 socket 'tcp:5277'`.
+* **Fresh Mac = no Homebrew, JDK, SDK or ObdMetrics.** `SETUP.md` §1 "From scratch" installs everything under
+  `~/Library/Android` with curl (JDK folder names change per Temurin release, check `ls ~/Library/Android/jdk`).
+  Pitfall: the build then fails at `validateSigningGiuliaAADebug` until `~/.android/debug.keystore` is created with
+  `keytool`. The app resolves `obd-metrics:11.26.1-SNAPSHOT` from `~/.m2` only after `../ObdMetrics` is cloned and
+  `mvn install`ed (JDK 11).
+* "Run the tests on the phone": there are no instrumented tests. Run the unit suites on the Mac and smoke-test on
+  the phone over adb (`SETUP.md` §4 step 3: `mock` connection type, connect, check logcat, switch back to Bluetooth
+  Classic). Drive it with `adb shell input tap` + `uiautomator dump` for element bounds; the phone must be unlocked
+  (`dumpsys window | grep isKeyguardShowing`), and the PIN and the first-start battery-optimisation dialog are the
+  user's to answer.
 * Firebase / Crashlytics are gone from the build (2026-10-21): no `google-services.json` is needed any more. An old
   checkout's placeholder file is harmless and gitignored.
 

@@ -76,7 +76,9 @@ internal data class ClassicSlot(
     val slow: Boolean = true,
     val fallbackPidId: Long? = null,
     val targetPidId: Long? = null,
-    val relativeToBaro: Boolean = false
+    val relativeToBaro: Boolean = false,
+    // Drawn instead of the label where the label does not fit its cell at the text floor (split screen).
+    val shortLabelRes: Int? = null
 )
 
 private const val MINUS = "−"
@@ -203,6 +205,7 @@ internal val CLASSIC_SUB: List<ClassicSlot> =
             pidId = ClassicPids.BATTERY_48V_SOC,
             kind = ClassicKind.SUB,
             labelRes = R.string.classic_label_battery_48v,
+            shortLabelRes = R.string.classic_label_battery_48v_short,
             unit = "%",
             scale = ClassicScale(min = 0.0, max = 100.0, numerals = numerals(0, 50, 100))
         ),
@@ -210,6 +213,7 @@ internal val CLASSIC_SUB: List<ClassicSlot> =
             pidId = ClassicPids.STARTER_GENERATOR_POWER,
             kind = ClassicKind.CENTRE_ZERO,
             labelRes = R.string.classic_label_starter_generator,
+            shortLabelRes = R.string.classic_label_starter_generator_short,
             unit = "kW",
             decimals = 1,
             slow = false,
@@ -229,6 +233,7 @@ internal val CLASSIC_SUB: List<ClassicSlot> =
             pidId = ClassicPids.MODULE_VOLTAGE,
             kind = ClassicKind.SUB,
             labelRes = R.string.classic_label_battery_12v,
+            shortLabelRes = R.string.classic_label_battery_12v_short,
             unit = "V",
             decimals = 1,
             scale = ClassicScale(min = 10.0, max = 16.0, numerals = numerals(10, 13, 16))

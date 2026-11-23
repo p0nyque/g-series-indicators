@@ -10,6 +10,9 @@
     <string name="classic_label_battery_48v">48V BATTERY</string>
     <string name="classic_label_starter_generator">STARTER-GEN</string>
     <string name="classic_label_battery_12v">12V BATTERY</string>
+    <string name="classic_label_battery_48v_short">48V</string>
+    <string name="classic_label_starter_generator_short">GEN</string>
+    <string name="classic_label_battery_12v_short">12V</string>
     <string name="classic_target">TARGET</string>
     <string name="classic_regen_lamp">DPF REGEN</string>
     <string name="classic_regen_since">SINCE REGEN</string>

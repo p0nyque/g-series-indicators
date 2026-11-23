@@ -80,6 +80,24 @@ Three bands across the renderer's visible area, top to bottom:
 - At 800 × 480 (DHU default) the main dials are ~180 px across and the sub-dials ~130 px wide. Check both
   800 × 480 and 1920 × 720 before calling it done.
 
+### Small areas (Android Auto split screen)
+
+Android Auto does not always give the whole screen. On the DHU (800 × 480) the visible area was 776 × 300 or
+776 × 376 full screen, and 442 × 342 in split screen next to media. There the dials shrink but text stays at 11 px,
+so the text is up to twice its designed size against the dial. Before 2026-11-23 it then overlapped: `BOOST` ran into
+`0.5` / `1.5`, `TARGET` into the scale ends, the sub-dial labels into each other, EGT's `450` into `900`.
+
+| | Before | After |
+|---|---|---|
+| Sub-dial label too wide for its cell | Overlaps the neighbour's label | Letter spacing shrinks; if it still does not fit, a short label: `48V`, `GEN`, `12V` |
+| Scale numeral touching a label, unit, readout, target or another numeral | Drawn over it | Left out; middle numerals go first, the scale ends stay |
+| Boost `TARGET` line | Fixed at 50 units under the centre | Lowered just enough to clear the scale ends |
+| 800 × 480, 1920 × 720 | — | Unchanged: no numeral left out, full labels |
+
+Neighbouring sub-dial labels keep a gap of half the text size. Readouts reserve their widest text (scale ends, a value
+10 % under the scale, `--`), so numerals never sit where a reading can appear. Code: `ClassicTexts` (the text plan of
+the static layer; `ClassicDrawer.plan`). Split-screen render: [img/classic-dashboard-aa-split.png](img/classic-dashboard-aa-split.png).
+
 ### Main dial (M1–M4)
 
 - 240° sweep, from 7 o'clock to 5 o'clock.
@@ -188,7 +206,10 @@ Additive only: a new screen type, profile and PID file. Existing screens, profil
 
 ## Tests
 
-See [classic-dashboard-tech.md §7](classic-dashboard-tech.md#7-tests).
+See [classic-dashboard-tech.md §7](classic-dashboard-tech.md#7-tests). Small areas: `ClassicRenderTest` measures every
+static text box and readout reservation with the bundled fonts and fails on any overlap at 800 × 480, the three
+Android Auto areas above and 1920 × 720 (it failed at 776 × 300 before the fix). It also pins that split screen keeps
+every label, readout and main-dial scale end, and that the designed sizes leave out no numeral and use no short label.
 
 ## Risks and verification checklist
 
@@ -200,6 +221,8 @@ See [classic-dashboard-tech.md §7](classic-dashboard-tech.md#7-tests).
 - [ ] Oil level MIN / MAX raw values match BimmerLink's oil level page.
 - [ ] Regen lamp lights during a regen (EGT ~550–650 °C at the same time) and the distance resets afterwards.
 - [ ] DHU check at 800 × 480 and 1920 × 720; then on the car's screen (G31 LCI, ID7). Labels readable at a glance.
+- [x] DHU split screen (442 × 342) and full screen (776 × 376): no overlapping text (2026-11-23).
+- [ ] Split screen on the car's screen: the ID7 split area differs from the DHU's.
 - [ ] Frame rate with the glow on (blur), on the DHU and in the car.
 
 ## Out of scope

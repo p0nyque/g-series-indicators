@@ -21,6 +21,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Rect
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -102,6 +103,54 @@ class ClassicRenderTest {
         assertTrue("no M blue zone drawn", pixels(bitmap, Color.parseColor("#008AC9")) > 10)
     }
 
+    // Android Auto's visible area on the DHU (800 x 480): full screen and split screen next to media.
+    private val aaFull = ClassicBox(12f, 90f, 788f, 390f)
+    private val aaSplit = ClassicBox(22f, 10f, 464f, 352f)
+
+    @Test
+    fun `no dial text overlaps, from split screen to a wide screen`() {
+        val drawer = ClassicDrawer(RuntimeEnvironment.getApplication())
+        listOf(ClassicBox(0f, 0f, 800f, 480f), aaFull, ClassicBox(12f, 10f, 788f, 386f), aaSplit, ClassicBox(0f, 0f, 1920f, 720f)).forEach { area ->
+            val plan = drawer.plan(ClassicLayout.of(area))
+            val boxes = plan.boxes + plan.reserved
+            boxes.forEachIndexed { i, a ->
+                boxes.drop(i + 1).forEach { b -> assertFalse("${area.width} x ${area.height}: $a overlaps $b", a.overlaps(b)) }
+            }
+        }
+    }
+
+    @Test
+    fun `split screen keeps every label, unit and readout and the scale ends`() {
+        val plan = ClassicDrawer(RuntimeEnvironment.getApplication()).plan(ClassicLayout.of(aaSplit))
+        val app = RuntimeEnvironment.getApplication()
+        val labelOf = { slot: ClassicSlot -> plan.static.indexOfFirst { it.value in listOfNotNull(slot.labelRes, slot.shortLabelRes).map(app::getString) } }
+        (CLASSIC_MAIN + CLASSIC_SUB).forEach { slot -> assertTrue("label ${app.getString(slot.labelRes)}", labelOf(slot) >= 0) }
+        assertEquals("every readout has its room", 4 + 5 + 1, plan.reserved.size)
+        val subLabels = CLASSIC_SUB.map { slot -> plan.boxes[labelOf(slot)] }
+        subLabels.zipWithNext { a, b -> assertTrue("sub-dial labels too close: $a, $b", b.left - a.right >= 4f) }
+        CLASSIC_MAIN.forEach { slot ->
+            listOf(slot.scale.numerals.first(), slot.scale.numerals.last()).forEach { end ->
+                assertTrue("${app.getString(slot.labelRes)} ${end.text}", plan.static.any { it.value == end.text })
+            }
+        }
+    }
+
+    @Test
+    fun `the designed sizes leave out no numeral`() {
+        val drawer = ClassicDrawer(RuntimeEnvironment.getApplication())
+        listOf(ClassicBox(0f, 0f, 800f, 480f), ClassicBox(0f, 0f, 1920f, 720f)).forEach {
+            val plan = drawer.plan(ClassicLayout.of(it))
+            assertEquals("${it.width} x ${it.height}", emptyList<String>(), plan.dropped.map { t -> t.value })
+            assertTrue("short label at ${it.width} x ${it.height}", plan.static.none { t -> t.value in listOf("48V", "GEN", "12V") })
+        }
+    }
+
+    @Test
+    fun `renders the Android Auto full and split screen areas`() {
+        save(render(800, 480, running = true, area = aaFull), "classic-aa-full.png")
+        save(render(800, 480, running = true, area = aaSplit), "classic-aa-split.png")
+    }
+
     @Test
     fun `missing PIDs leave their slots at rest without crashing`() {
         val bitmap = render(800, 480, running = true, values = emptyMap())
@@ -112,7 +161,8 @@ class ClassicRenderTest {
         width: Int,
         height: Int,
         running: Boolean,
-        values: Map<Long, Number> = MOCKUP_VALUES
+        values: Map<Long, Number> = MOCKUP_VALUES,
+        area: ClassicBox = ClassicBox(0f, 0f, width.toFloat(), height.toFloat())
     ): Bitmap {
         val renderer =
             ClassicSurfaceRenderer(
@@ -121,7 +171,7 @@ class ClassicRenderTest {
                 isRunning = { running }
             )
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        renderer.onDraw(Canvas(bitmap), Rect(0, 0, width, height))
+        renderer.onDraw(Canvas(bitmap), Rect(area.left.toInt(), area.top.toInt(), area.right.toInt(), area.bottom.toInt()))
         renderer.recycle()
         return bitmap
     }

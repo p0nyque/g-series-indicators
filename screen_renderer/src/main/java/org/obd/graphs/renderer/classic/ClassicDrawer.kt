@@ -84,7 +84,7 @@ internal class ClassicDrawer(
     private val light: Typeface = Typeface.createFromAsset(context.assets, "fonts/Roboto-Light.ttf")
     private val bold: Typeface = Typeface.create(regular, Typeface.BOLD)
 
-    private val labels = (CLASSIC_MAIN + CLASSIC_SUB).associate { it.labelRes to context.getString(it.labelRes) }
+    private val labels = (CLASSIC_MAIN + CLASSIC_SUB).associate { it.labelRes to listOfNotNull(it.labelRes, it.shortLabelRes).map(context::getString) }
     private val targetLabel = context.getString(R.string.classic_target) + " "
     private val lampLabel = context.getString(R.string.classic_regen_lamp)
     private val sinceRegen = "  " + context.getString(R.string.classic_regen_since)
@@ -146,6 +146,9 @@ internal class ClassicDrawer(
     ) {
         CLASSIC_MAIN.zip(layout.main).forEach { (slot, place) -> drawMainScale(canvas, slot, place) }
         CLASSIC_SUB.zip(layout.sub).forEach { (slot, place) -> drawSubScale(canvas, slot, place) }
+        plan(layout).static.forEach {
+            text(canvas, it.value, it.x, it.y, it.px, it.color, face(it.face), it.spacing, if (it.align == ClassicAlign.LEFT) Paint.Align.LEFT else Paint.Align.CENTER)
+        }
 
         val ts = layout.textScale
         stroke.color = ClassicColors.SEPARATOR
@@ -177,14 +180,6 @@ internal class ClassicDrawer(
             stroke.strokeWidth = (if (isMajor) 2.2f else 1.2f) * k
             radial(canvas, cx, cy, r - 2 * k, r - 2 * k - length, d, stroke)
         }
-
-        scale.numerals.forEach {
-            val d = ClassicLayout.angle(slot, scale.fraction(it.value))
-            text(canvas, it.text, ClassicLayout.x(cx, r - 30 * k, d), ClassicLayout.y(cy, r - 30 * k, d) + 5.5f * k, 15 * k, ClassicColors.NUM, light)
-        }
-
-        text(canvas, labels.getValue(slot.labelRes), cx, cy - 22 * k, 10 * k, ClassicColors.DIM, regular, spacing = 2 * k)
-        text(canvas, slot.unit, cx, cy + 32 * k, 12 * k, ClassicColors.DIM, light)
     }
 
     private fun drawSubScale(
@@ -193,7 +188,6 @@ internal class ClassicDrawer(
         place: ClassicDialPlace
     ) {
         val (cx, cy, r, k) = place
-        text(canvas, labels.getValue(slot.labelRes), cx, place.labelY, 9.5f * k, ClassicColors.DIM, regular, spacing = 1.2f * k)
         drawEdgeAndZones(canvas, slot, cx, cy, r + 2.5f * k, k)
 
         stroke.strokeCap = Paint.Cap.BUTT
@@ -205,12 +199,30 @@ internal class ClassicDrawer(
             stroke.strokeWidth = (if (major) 2f else 1.1f) * k
             radial(canvas, cx, cy, r - k, r - (if (major) 11f else 6f) * k, d, stroke)
         }
-
-        slot.scale.numerals.forEach {
-            val d = ClassicLayout.angle(slot, slot.scale.fraction(it.value))
-            text(canvas, it.text, ClassicLayout.x(cx, r - 27 * k, d), ClassicLayout.y(cy, r - 27 * k, d) + 4 * k, 11 * k, ClassicColors.NUM, light)
-        }
     }
+
+    /** Labels, units and numerals fitted to [layout] (see [ClassicTexts]). */
+    fun plan(
+        layout: ClassicLayout,
+        fit: Boolean = true
+    ): ClassicTextPlan =
+        ClassicTexts.plan(
+            layout,
+            { labels.getValue(it.labelRes) },
+            targetLabel,
+            { value, px, typeface, spacing ->
+                style(px, Color.BLACK, face(typeface), spacing)
+                text.measureText(value)
+            },
+            fit
+        )
+
+    private fun face(face: ClassicFace): Typeface =
+        when (face) {
+            ClassicFace.REGULAR -> regular
+            ClassicFace.LIGHT -> light
+            ClassicFace.BOLD -> bold
+        }
 
     /** The light edge line along the sweep; printed zones replace it with a segmented band. */
     private fun drawEdgeAndZones(
@@ -307,7 +319,7 @@ internal class ClassicDrawer(
             pointer(canvas, cx, cy, r + k, r - 46 * k, ClassicLayout.angle(frame.slot, frame.fraction), 3.6f * k, layout.textScale)
             text(canvas, frame.text, cx, cy + 14 * k, 34 * k, ClassicColors.INK, regular)
             frame.targetText?.let {
-                pair(canvas, targetLabel, ClassicColors.DIM, 9 * k, regular, 1.5f * k, it, ClassicColors.INK, 13 * k, light, cx, cy + 50 * k)
+                pair(canvas, targetLabel, ClassicColors.DIM, 9 * k, regular, 1.5f * k, it, ClassicColors.INK, 13 * k, light, cx, ClassicTexts.targetY(place))
             }
         }
 

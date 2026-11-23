@@ -292,6 +292,13 @@ These came out of DTC / readiness work that is gone from the app, but they descr
   Wrong turns: forum threads (none for B47; VerticalScope forums refuse WebFetch and the browser pane); OBDb's DDE-side
   DIDs (`4205`, `4402` …) are from US *petrol* DMEs and are absent from the DDE table. The N57 DDE7 table
   (`kmalinich/dieslg8`) uses `2C10 <id>` and other ids.
+* **Android Auto may give Classic far less than the screen**: DHU split screen next to media = 442 × 342 (full: 776 ×
+  300 or 376). Text is floored at 11 px, so there it is ~2x its designed size and overlapped. Static text now goes
+  through `ClassicTexts` (a text plan: label spacing fitted to the cell, short labels `48V`/`GEN`/`12V`, numerals that
+  collide dropped middle-first, readouts reserve their widest text); never draw dial text straight from the drawer
+  again. `ClassicRenderTest` fails on any text-box overlap at these sizes; it needs Robolectric for real font widths.
+  Spec "Small areas". Reinstalling the APK during a DHU session gives "has encountered an unexpected error" in AA
+  (`DeadObjectException` in `CarApp.H`, no app crash): restart the DHU, it is not a bug.
 * The glow must sit *between* two static bitmaps (faces below, ticks / numerals above): over one flat bitmap it tinted
   the ticks and numerals orange. Draw order is the mockup script's.
 * Staleness: only boost and the starter-generator are fast (10 s). `mode01.json` reads coolant and IAT at priority 2

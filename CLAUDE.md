@@ -162,6 +162,14 @@ socket 'tcp:5277'`.
   Classic). Drive it with `adb shell input tap` + `uiautomator dump` for element bounds; the phone must be unlocked
   (`dumpsys window | grep isKeyguardShowing`), and the PIN and the first-start battery-optimisation dialog are the
   user's to answer.
+* **"App not in Android Auto"**: the DHU's app grid is the ground truth (the app sorts last, below the fold), not
+  the phone's AA "Customize launcher" list, which did not list the sideloaded app even with Unknown sources on while
+  the DHU showed and ran it (2026-11-23, AA 18.0). Check `dumpsys package org.obd.graphs.my.giulia.aa | grep
+  firstInstallTime` (was it installed then?) and AA developer settings → Unknown sources. DHU 2.0: run
+  `desktop-head-unit` with no flags (adb link; `--usb=false` is read as a serial); stdin takes `tap x y` and
+  `screenshot <file>`. Before it, confirm the phone listens: port `:149D` in `/proc/net/tcp6`.
+* Driving the phone with `adb shell input`: the user may be using it at the same time. Dump the UI and confirm the
+  expected app is in front before every tap or swipe, never tap blind.
 * Firebase / Crashlytics are gone from the build (2026-10-21): no `google-services.json` is needed any more. An old
   checkout's placeholder file is harmless and gitignored.
 
